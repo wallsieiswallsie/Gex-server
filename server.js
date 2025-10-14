@@ -1,5 +1,7 @@
 require("dotenv").config();
 const Hapi = require("@hapi/hapi");
+const fs = require("fs");
+const path = require("path");
 
 const init = async () => {
   const server = Hapi.server({
@@ -12,22 +14,34 @@ const init = async () => {
     },
   });
 
-  const packageRoutes = require("./src/api/package");
-  const authRoutes = require("./src/api/auth");
-  const invoiceRoutes = require("./src/api/invoice");
-  const batchRoutes = require("./src/api/batch");
-  const statusRoutes = require("./src/api/status")
-  const deliveryRoutes = require("./src/api/delivery")
+  // === AUTO REGISTER ROUTES ===
+  const apiDir = path.join(__dirname, "src/api");
+  const folders = fs.readdirSync(apiDir);
 
-  server.route(packageRoutes);
-  server.route(authRoutes);
-  server.route(invoiceRoutes);
-  server.route(batchRoutes);
-  server.route(statusRoutes);
-  server.route(deliveryRoutes);
+  for (const folder of folders) {
+    const folderPath = path.join(apiDir, folder);
+    const indexFile = path.join(folderPath, "index.js");
+
+    // pastikan folder punya index.js
+    if (fs.existsSync(indexFile)) {
+      const routes = require(indexFile);
+      server.route(routes);
+      console.log(`✅ Loaded routes from ${folder}`);
+    }
+  }
+
+  // optional: route root biar gak 404
+  server.route({
+    method: "GET",
+    path: "/",
+    handler: () => ({
+      status: "success",
+      message: "GEX Server is running 🚀",
+    }),
+  });
 
   await server.start();
-  console.log("Server running on %s", server.info.uri);
+  console.log(`Server running on ${server.info.uri}`);
 };
 
 init();
