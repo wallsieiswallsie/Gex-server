@@ -1,0 +1,80 @@
+const { 
+  createBatchKapalHandler,
+  createBatchPesawatHandler,
+  addPackageToKapalHandler,
+  getAllBatchesKapalHandler,
+  addPackageToPesawatHandler,
+  getAllBatchesPesawatHandler,
+  getAllBatchesKapalWithPackagesHandler,
+  getAllBatchesPesawatWithPackagesHandler,
+  addPackageToKarungHandler,
+  addKarungToBatchHandler,
+  getBatchWithKarungHandler,
+  getPackagesByKarungHandler,
+} = require("./handler");
+
+const batchRoutes = [
+  {
+    method: "POST",
+    path: "/batches/kapal",
+    handler: createBatchKapalHandler,
+  },
+  {
+    method: "POST",
+    path: "/batches/pesawat",
+    handler: createBatchPesawatHandler,
+  },
+  {
+    method: "POST",
+    path: "/batches/kapal/{batchId}/packages",
+    handler: addPackageToKapalHandler,
+  },
+  {
+    method: "POST",
+    path: "/batches/pesawat/{batchId}/packages",
+    handler: addPackageToPesawatHandler,
+  },
+  {
+    method: "GET",
+    path: "/batches/kapal",
+    handler: getAllBatchesKapalHandler,
+  },
+  {
+    method: "GET",
+    path: "/batches/pesawat",
+    handler: getAllBatchesPesawatHandler,
+  },
+  {
+    method: "GET",
+    path: "/batches/kapal/{batchId}",
+    handler: getAllBatchesKapalWithPackagesHandler,
+  },
+  {
+    method: "GET",
+    path: "/batches/pesawat/{batchId}",
+    handler: getAllBatchesPesawatWithPackagesHandler,
+  },
+  {
+    method: "POST",
+    path: "/batches/kapal/{batchId}/karung/add-package",
+    handler: addPackageToKarungHandler,
+  },
+  {
+    method: "POST",
+    path: "/batches/kapal/{batchId}/karung",
+    handler: addKarungToBatchHandler,
+  },
+  {
+    method: "GET",
+    path: "/batches/kapal/{batchId}/karung",
+    handler: getBatchWithKarungHandler,
+  },
+  {
+    method: "GET",
+    path: "/batches/kapal/{batchId}/karung/{noKarung}/packages",
+    handler: getPackagesByKarungHandler,
+  }
+
+];
+
+module.exports = batchRoutes;
