@@ -37,7 +37,7 @@ class DeliveryService {
           package_id: pkgId,
         });
 
-        await statusService.addStatus(pkgId, 6);
+        await statusService.addStatus(pkgId, 6, null, trx);
 
         inserted.push(pkgId);
         
