@@ -108,9 +108,29 @@ class StatusService {
       }
 
       case 7: {
-        if (!packageId) throw new Error("packageId harus diberikan untuk status 7");
+        if (!packageId) {
+          throw new Error("Resi atau packageId harus diberikan untuk status 7");
+        }
 
-        const delivery = await trx("deliveries").where({ package_id: packageId }).first();
+        let targetPackageId = packageId;
+
+        // 🔹 Jika yang dikirim adalah resi (string bukan angka)
+        if (typeof packageId === "string" && isNaN(Number(packageId))) {
+          const result = await trx("deliveries")
+            .join("packages", "deliveries.package_id", "packages.id")
+            .select("deliveries.package_id", "packages.resi")
+            .where("packages.resi", packageId)
+            .first();
+
+          if (!result) {
+            throw new Error(`Paket dengan resi ${packageId} tidak ditemukan di deliveries`);
+          }
+
+          targetPackageId = result.package_id;
+        }
+
+        // 🔹 Validasi bahwa paket sudah aktif di deliveries
+        const delivery = await trx("deliveries").where({ package_id: targetPackageId }).first();
         if (!delivery) {
           throw new Error("Paket belum ada di tabel deliveries, tidak bisa set status 7");
         }
@@ -119,10 +139,12 @@ class StatusService {
           throw new Error("Paket belum aktif di deliveries, tidak bisa set status 7");
         }
 
+        // 🔹 Update status ke 7 di tabel package_status
         await trx("package_status")
-          .insert({ package_id: packageId, status: 7, created_at: now })
+          .insert({ package_id: targetPackageId, status: 7, created_at: now })
           .onConflict("package_id")
           .merge({ status: 7, created_at: now });
+
         break;
       }
 
