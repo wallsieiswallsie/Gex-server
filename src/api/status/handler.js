@@ -4,7 +4,7 @@ const statusService = new StatusService();
 async function addStatusHandler(request, h) {
     try {
         const packageId = Number(request.params.packageId);
-        const { status, batchId } = request.payload; // batchId opsional untuk status 1
+        const { status, batchId } = request.payload;
 
         if (isNaN(packageId)) {
             throw new Error("packageId harus angka");
@@ -84,6 +84,5 @@ module.exports = {
     addStatusHandler,
     addBatchStatusHandler3,
     addBatchStatusHandler4,
-   // getPackageStatusesHandler,
     getLatestStatusHandler
 };
