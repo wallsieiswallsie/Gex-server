@@ -100,10 +100,14 @@ class PackageServices {
         .leftJoin("invoice_packages", "packages.id", "invoice_packages.package_id")
         .leftJoin("invoices", "invoice_packages.invoice_id", "invoices.id")
         .leftJoin(
-          db("package_status")
-            .select("package_status.package_id", "package_status.status", "package_status.created_at")
-            .whereRaw("package_status.created_at = (SELECT MAX(created_at) FROM package_status WHERE package_id = packages.id)")
-            .as("ps"),
+          db.raw(`
+            (
+              SELECT DISTINCT ON (package_id)
+                package_id, status, created_at
+              FROM package_status
+              ORDER BY package_id, created_at DESC
+            ) as ps
+          `),
           "packages.id",
           "ps.package_id"
         )
