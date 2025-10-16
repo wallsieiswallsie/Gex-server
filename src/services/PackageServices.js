@@ -264,12 +264,20 @@ class PackageServices {
 
       if (!relation) throw new NotFoundError("Paket tidak ada di active_package");
 
+      // 🔹 Pindahkan ke archive_packages
       await this.addArchivePackages({ trx: t, packageId });
 
+      // 🔹 Hapus dari active_packages
       await t("active_packages")
-      .where("id", relation.id)
-      .andWhere("package_id", packageId)
-      .del();
+        .where("id", relation.id)
+        .andWhere("package_id", packageId)
+        .del();
+
+      // 🔹 Tambahkan status 8 (selesai)
+      const statusService = new StatusService();
+      await statusService.addStatus(packageId, 8, null, t);
+
+      // 🔹 Commit transaksi otomatis oleh db.transaction
     });
   }
 

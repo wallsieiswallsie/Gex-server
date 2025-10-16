@@ -148,6 +148,27 @@ class StatusService {
         break;
       }
 
+      case 8: {
+        if (!packageId) throw new Error("packageId harus diberikan untuk status 8");
+
+        // Pastikan paket ada di tabel packages
+        const pkg = await trx("packages").where({ id: packageId }).first();
+        if (!pkg) {
+          throw new Error("Paket tidak ditemukan di tabel packages");
+        }
+
+        // Update kolom finished = true
+        await trx("packages").where({ id: packageId }).update({ finished: true });
+
+        // Simpan status 8 di tabel package_status
+        await trx("package_status")
+          .insert({ package_id: packageId, status: 8, created_at: now })
+          .onConflict("package_id")
+          .merge({ status: 8, created_at: now });
+
+        break;
+      }
+
       default:
         throw new Error("Status tidak valid");
     }
