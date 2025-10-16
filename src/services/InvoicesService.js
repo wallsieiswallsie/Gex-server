@@ -56,12 +56,16 @@ class InvoicesService {
 
   async getAllInvoices() {
     return db("invoices")
-      .join("invoice_packages", "invoices.id", "invoice_packages.invoice_id")
-      .join("active_packages", "invoice_packages.package_id", "active_packages.package_id")
-      .distinct("invoices.*") // agar invoice tidak duplikasi jika ada >1 paket aktif
-      .select("invoices.*")
+      .leftJoin("invoice_packages", "invoices.id", "invoice_packages.invoice_id")
+      .leftJoin("active_packages", "invoice_packages.package_id", "active_packages.package_id")
+      .groupBy("invoices.id")
+      .select(
+        "invoices.*",
+        db.raw("COUNT(invoice_packages.package_id) AS package_count")
+      )
       .orderBy("invoices.created_at", "desc");
   }
+
 
   async getArchivedInvoices() {
     // join invoice_packages → archive_packages → invoices
