@@ -93,7 +93,9 @@ class InvoicesService {
     const packages = await db("packages")
       .join("invoice_packages", "packages.id", "invoice_packages.package_id")
       .where("invoice_packages.invoice_id", id)
-      .select("packages.*");
+      .select("packages.*",
+        db.raw("COUNT(invoice_packages.package_id) AS package_count")
+      );
 
     return { ...invoice, packages };
   }
