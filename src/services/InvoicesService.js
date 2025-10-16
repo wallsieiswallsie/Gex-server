@@ -95,7 +95,8 @@ class InvoicesService {
       .where("invoice_packages.invoice_id", id)
       .select("packages.*",
         db.raw("COUNT(invoice_packages.package_id) AS package_count")
-      );
+      )
+      .groupBy("packages.id");
 
     return { ...invoice, packages };
   }
