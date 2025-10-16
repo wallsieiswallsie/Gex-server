@@ -1,4 +1,3 @@
-// services/DeliveryService.js
 const db = require("../db");
 const StatusService = require("./StatusService");
 const statusService = new StatusService();
@@ -49,13 +48,11 @@ class DeliveryService {
 
   async addPackageToPengantaranActive(resi) {
     return await db.transaction(async (trx) => {
-      // Cari package berdasarkan resi
       const pkg = await trx("packages").where("resi", resi).first();
       if (!pkg) {
         throw new Error("Paket dengan resi tersebut tidak ditemukan");
       }
 
-      // Cari record deliveries berdasarkan package_id
       const delivery = await trx("deliveries")
         .where({ package_id: pkg.id })
         .first();
@@ -64,10 +61,11 @@ class DeliveryService {
         throw new Error("Delivery untuk paket ini tidak ditemukan");
       }
 
-      // Update kolom active menjadi true
       await trx("deliveries")
         .where({ id: delivery.id })
         .update({ active: true });
+
+      await statusService.addStatus(pkg.id, 7, null, trx);
 
       return {
         message: "Paket berhasil diaktifkan untuk pengantaran",
@@ -80,13 +78,11 @@ class DeliveryService {
 
   async addPackageToPengantaranArchive(resi) {
     return await db.transaction(async (trx) => {
-      // Cari package berdasarkan resi
       const pkg = await trx("packages").where("resi", resi).first();
       if (!pkg) {
         throw new Error("Paket dengan resi tersebut tidak ditemukan");
       }
 
-      // Cari record deliveries berdasarkan package_id
       const delivery = await trx("deliveries")
         .where({ package_id: pkg.id })
         .first();
@@ -95,7 +91,6 @@ class DeliveryService {
         throw new Error("Delivery untuk paket ini tidak ditemukan");
       }
 
-      // Update kolom active menjadi true
       await trx("deliveries")
         .where({ id: delivery.id })
         .update({ active: false, finished: true });
