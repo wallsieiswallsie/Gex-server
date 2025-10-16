@@ -69,18 +69,18 @@ class InvoicesService {
 
 
   async getArchivedInvoices() {
-    // join invoice_packages → archive_packages → invoices
     const archivedInvoices = await db("invoices")
       .join("invoice_packages", "invoices.id", "invoice_packages.invoice_id")
-      .join("archive_packages", "invoice_packages.package_id", "archive_packages.package_id")
-      .distinct("invoices.id") // ambil invoice unik
+      .join("archive_packages", "invoice_packages.package_id", "archive_packages.package_id",
+        db.raw("COUNT(invoice_packages.package_id) AS package_count")
+      )
+      .distinct("invoices.id")
       .select("invoices.id", "invoices.nama_invoice", "invoices.total_price", "invoices.created_at")
       .orderBy("invoices.created_at", "desc");
 
     return archivedInvoices;
   }
 
-  // Ambil invoice berdasarkan ID
   async getInvoiceById(id) {
     const invoice = await db("invoices").where("id", id).first();
     if (!invoice) return null;
@@ -95,11 +95,9 @@ class InvoicesService {
 
   async addPackagesByResiToExistingInvoice(invoiceId, resiList) {
     return await db.transaction(async (trx) => {
-      // 1️⃣ Pastikan invoice ada
       const invoice = await trx("invoices").where("id", invoiceId).first();
       if (!invoice) throw new NotFoundError("Invoice tidak ditemukan");
 
-      // 2️⃣ Ambil paket berdasarkan kolom resi
       const packages = await trx("packages").whereIn("resi", resiList);
       if (packages.length === 0) {
         throw new NotFoundError("Tidak ada paket ditemukan berdasarkan nomor resi");
@@ -107,7 +105,6 @@ class InvoicesService {
 
       const packageIds = packages.map((p) => p.id);
 
-      // 3️⃣ Cek apakah ada paket yang sudah di-invoice-kan
       const alreadyInvoiced = packages.filter((p) => p.invoiced === true);
       if (alreadyInvoiced.length > 0) {
         const resiSudahMasuk = alreadyInvoiced.map((p) => p.resi).join(", ");
@@ -116,19 +113,16 @@ class InvoicesService {
         );
       }
 
-      // 4️⃣ Tambahkan ke tabel relasi invoice_packages
       const invoicePackages = packageIds.map((pid) => ({
         invoice_id: invoiceId,
         package_id: pid,
       }));
       await trx("invoice_packages").insert(invoicePackages);
 
-      // 5️⃣ Update flag invoiced di tabel packages
       await trx("packages")
         .whereIn("id", packageIds)
         .update({ invoiced: true });
 
-      // 6️⃣ Hitung ulang total harga invoice
       const allPackages = await trx("packages")
         .join("invoice_packages", "packages.id", "invoice_packages.package_id")
         .where("invoice_packages.invoice_id", invoiceId)
@@ -140,7 +134,6 @@ class InvoicesService {
         total_price: newTotal,
       });
 
-      // 7️⃣ Tambahkan status baru untuk setiap paket
       for (const pid of packageIds) {
         await statusService.addStatus(pid, 5);
       }
@@ -166,7 +159,6 @@ class InvoicesService {
         throw new NotFoundError("Invoice tidak ditemukan");
       }
 
-      // Ambil semua package terkait invoice
       const packages = await trx("packages")
         .join("invoice_packages", "packages.id", "invoice_packages.package_id")
         .whereIn("invoice_packages.invoice_id", invoiceIds)
@@ -178,9 +170,7 @@ class InvoicesService {
         throw new NotFoundError("Tidak ada paket yang terkait dengan invoice ini");
       }
 
-      // Proses arsip paket satu per satu mirip PackageServices
       for (const packageId of packageIds) {
-        // Hapus dari active_packages dan tambahkan ke archive_packages
         await packageService.removeActivePackageById({ packageId, trx });
       }
 
@@ -192,7 +182,6 @@ class InvoicesService {
     });
   }
 
-  // Hapus paket dari invoice
   async removePackageFromInvoice(invoiceId, packageId) {
     return await db.transaction(async (trx) => {
       invoiceId = String(invoiceId);
