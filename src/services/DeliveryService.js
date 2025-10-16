@@ -1,5 +1,7 @@
 // services/DeliveryService.js
 const db = require("../db");
+const StatusService = require("./StatusService");
+const statusService = new StatusService();
 
 class DeliveryService {
   async getInvoiceSummaryById(id) {
@@ -35,7 +37,10 @@ class DeliveryService {
           package_id: pkgId,
         });
 
+        await statusService.addStatus(pkgId, 6);
+
         inserted.push(pkgId);
+        
       }
 
       return { invoice, inserted, skipped };
