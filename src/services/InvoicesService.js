@@ -71,15 +71,20 @@ class InvoicesService {
   async getArchivedInvoices() {
     const archivedInvoices = await db("invoices")
       .join("invoice_packages", "invoices.id", "invoice_packages.invoice_id")
-      .join("archive_packages", "invoice_packages.package_id", "archive_packages.package_id",
+      .join("archive_packages", "invoice_packages.package_id", "archive_packages.package_id")
+      .select(
+        "invoices.id",
+        "invoices.nama_invoice",
+        "invoices.total_price",
+        "invoices.created_at",
         db.raw("COUNT(invoice_packages.package_id) AS package_count")
       )
-      .distinct("invoices.id")
-      .select("invoices.id", "invoices.nama_invoice", "invoices.total_price", "invoices.created_at")
+      .groupBy("invoices.id")
       .orderBy("invoices.created_at", "desc");
 
     return archivedInvoices;
   }
+
 
   async getInvoiceById(id) {
     const invoice = await db("invoices").where("id", id).first();
