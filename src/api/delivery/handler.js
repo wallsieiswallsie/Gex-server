@@ -21,7 +21,7 @@ const postPengantaranHandler = async (request, h) => {
 };
 
 const addPackageToPengantaranActiveHandler = async (request, h) => {
-  const { resi } = request.payload; // dikirim dari client
+  const { resi } = request.payload;
 
   try {
     const result = await deliveryService.addPackageToPengantaranActive(resi);
@@ -34,7 +34,7 @@ const addPackageToPengantaranActiveHandler = async (request, h) => {
 };
 
 const addPackageToPengantaranArchiveHandler = async (request, h) => {
-  const { resi } = request.payload; // dikirim dari client
+  const { resi } = request.payload;
 
   try {
     const result = await deliveryService.addPackageToPengantaranArchive(resi);
@@ -113,6 +113,27 @@ const getPengantaranArchiveHandler = async (request, h) => {
   }
 };
 
+const getPengantaranArchiveByPackageFinishedHandler = async (request, h) => {
+  try {
+    const service = new DeliveryService();
+    const result = await service.getPengantaranArchiveByPackageFinished();
+
+    return h.response({
+      status: "success",
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error fetching archive by package finished:", error);
+
+    return h
+      .response({
+        status: "fail",
+        message: "Terjadi kesalahan pada server",
+      })
+      .code(500);
+  }
+};
+
 module.exports = {
   postPengantaranHandler,
   addPackageToPengantaranActiveHandler,
@@ -121,4 +142,5 @@ module.exports = {
   getAllPengantaranHandler,
   getPengantaranActiveHandler,
   getPengantaranArchiveHandler,
+  getPengantaranArchiveByPackageFinishedHandler,
 };

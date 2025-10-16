@@ -154,6 +154,20 @@ async getPengantaranArchive() {
     .orderBy("invoices.created_at", "desc");
 }
 
+async getPengantaranArchiveByPackageFinished() {
+  return await db("deliveries")
+    .join("packages", "deliveries.package_id", "packages.id")
+    .join("invoices", "deliveries.invoice_id", "invoices.id")
+    .where("packages.finished", true)
+    .groupBy("deliveries.invoice_id", "invoices.total_price", "invoices.created_at")
+    .select(
+      "deliveries.invoice_id",
+      "invoices.total_price",
+      db.raw("COUNT(deliveries.id) as total_packages")
+    )
+    .orderBy("invoices.created_at", "desc");
+}
+
 }
 
 module.exports = DeliveryService;
