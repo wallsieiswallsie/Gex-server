@@ -33,7 +33,6 @@ class StatusService {
     switch (status) {
       case 1: {
         if (!packageId) throw new Error("packageId harus diberikan untuk status 1");
-
         await db("package_status")
           .insert({ package_id: packageId, status, created_at: now })
           .onConflict("package_id")
@@ -48,7 +47,6 @@ class StatusService {
         const batchPackage = await db("batch_packages")
           .where({ package_id: packageId, id_batch: batchId })
           .first();
-
         if (!batchPackage) {
           throw new Error("Paket tidak ditemukan di batch ini");
         }
@@ -63,7 +61,6 @@ class StatusService {
       case 3:
       case 4: {
         if (!batchId) throw new Error(`batchId harus diberikan untuk status ${status}`);
-
         const batchPackages = await db("batch_packages")
           .where({ id_batch: batchId })
           .select("package_id");
@@ -87,11 +84,44 @@ class StatusService {
 
       case 5: {
         if (!packageId) throw new Error("packageId harus diberikan untuk status 5");
-
         await db("package_status")
           .insert({ package_id: packageId, status, created_at: now })
           .onConflict("package_id")
           .merge({ status, created_at: now });
+        break;
+      }
+
+      case 6: {
+        if (!packageId) throw new Error("packageId harus diberikan untuk status 6");
+
+        const delivery = await db("deliveries").where({ package_id: packageId }).first();
+        if (!delivery) {
+          throw new Error("Paket belum ada di tabel deliveries, tidak bisa set status 6");
+        }
+
+        await db("package_status")
+          .insert({ package_id: packageId, status: 6, created_at: now })
+          .onConflict("package_id")
+          .merge({ status: 6, created_at: now });
+        break;
+      }
+
+      case 7: {
+        if (!packageId) throw new Error("packageId harus diberikan untuk status 7");
+
+        const delivery = await db("deliveries").where({ package_id: packageId }).first();
+        if (!delivery) {
+          throw new Error("Paket belum ada di tabel deliveries, tidak bisa set status 7");
+        }
+
+        if (delivery.active !== true) {
+          throw new Error("Paket belum aktif di deliveries, tidak bisa set status 7");
+        }
+
+        await db("package_status")
+          .insert({ package_id: packageId, status: 7, created_at: now })
+          .onConflict("package_id")
+          .merge({ status: 7, created_at: now });
         break;
       }
 
