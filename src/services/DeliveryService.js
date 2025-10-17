@@ -97,7 +97,7 @@ class DeliveryService {
         .where({ id: delivery.id })
         .update({ active: false, finished: true });
 
-      await packageService.removeActivePackageById(pkg.id, trx);
+      await packageService.removeActivePackageById({ packageId: pkg.id, trx });
 
       return {
         message: "Paket berhasil diarsipkan",
