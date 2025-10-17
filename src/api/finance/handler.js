@@ -1,16 +1,16 @@
 const FinanceService = require("../../services/FinanceService");
 const financeService = new FinanceService();
 
-// 🔹 GET /finance/{idBatch}/{kode}/total
+// 🔹 GET /finance/{batchId}/{kode}/total
 const getTotalByBatchAndKodeHandler = async (request, h) => {
   try {
-    const { idBatch, kode } = request.params;
+    const { batchId, kode } = request.params;
 
-    const total = await financeService.getTotalByBatchAndKode(idBatch, kode);
+    const total = await financeService.getTotalByBatchAndKode(batchId, kode);
     return h
       .response({
         status: "success",
-        data: { idBatch, kode, total_harga: total },
+        data: { batchId, kode, total_harga: total },
       })
       .code(200);
   } catch (err) {
@@ -21,16 +21,16 @@ const getTotalByBatchAndKodeHandler = async (request, h) => {
   }
 };
 
-// 🔹 GET /finance/{idBatch}/{kode}/finished
+// 🔹 GET /finance/{batchId}/{kode}/finished
 const getTotalFinishedHandler = async (request, h) => {
   try {
-    const { idBatch, kode } = request.params;
+    const { batchId, kode } = request.params;
 
-    const total = await financeService.getTotalFinished(idBatch, kode);
+    const total = await financeService.getTotalFinished(batchId, kode);
     return h
       .response({
         status: "success",
-        data: { idBatch, kode, total_finished: total },
+        data: { batchId, kode, total_finished: total },
       })
       .code(200);
   } catch (err) {
@@ -41,16 +41,16 @@ const getTotalFinishedHandler = async (request, h) => {
   }
 };
 
-// 🔹 GET /finance/{idBatch}/{kode}/unfinished
+// 🔹 GET /finance/{batchId}/{kode}/unfinished
 const getTotalUnfinishedHandler = async (request, h) => {
   try {
-    const { idBatch, kode } = request.params;
+    const { batchId, kode } = request.params;
 
-    const total = await financeService.getTotalUnfinished(idBatch, kode);
+    const total = await financeService.getTotalUnfinished(batchId, kode);
     return h
       .response({
         status: "success",
-        data: { idBatch, kode, total_unfinished: total },
+        data: { batchId, kode, total_unfinished: total },
       })
       .code(200);
   } catch (err) {
