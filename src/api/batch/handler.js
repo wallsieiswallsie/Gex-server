@@ -48,14 +48,14 @@ async function createBatchKapalHandler(request, h) {
 // Handler untuk membuat batch pesawat
 async function createBatchPesawatHandler(request, h) {
   try {
-    const { packageIds, namaPIC, tanggalKirim, namaVendor, userId } = request.payload;
+    const { packageIds, pic, tanggal_kirim, vendor, userId } = request.payload;
 
     // Buat batch pesawat
     const { batchId, totalWeight, totalValue, via } = await createBatchPesawat(
       packageIds,
-      namaPIC,
-      tanggalKirim,
-      namaVendor,
+      pic,
+      tanggal_kirim,
+      vendor,
       userId
     );
 
