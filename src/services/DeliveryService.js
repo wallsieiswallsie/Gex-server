@@ -1,6 +1,8 @@
 const db = require("../db");
 const StatusService = require("./StatusService");
 const statusService = new StatusService();
+const PackageServices = require("./PackageServices");
+const packageService = new PackageServices();
 
 class DeliveryService {
   async getInvoiceSummaryById(id) {
@@ -94,6 +96,8 @@ class DeliveryService {
       await trx("deliveries")
         .where({ id: delivery.id })
         .update({ active: false, finished: true });
+
+      await packageService.removeActivePackageById(pkg.id, trx);
 
       return {
         message: "Paket berhasil diarsipkan",
