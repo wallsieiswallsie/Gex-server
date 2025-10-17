@@ -7,17 +7,17 @@ const {
 const financeRoutes = [
   {
     method: "GET",
-    path: "/finance/{idBatch}/{kode}/total",
+    path: "/finance/{batchId}/{kode}/total",
     handler: getTotalByBatchAndKodeHandler,
   },
   {
     method: "GET",
-    path: "/finance/{idBatch}/{kode}/finished",
+    path: "/finance/{batchId}/{kode}/finished",
     handler: getTotalFinishedHandler,
   },
   {
     method: "GET",
-    path: "/finance/{idBatch}/{kode}/unfinished",
+    path: "/finance/{batchId}/{kode}/unfinished",
     handler: getTotalUnfinishedHandler,
   },
 ];
