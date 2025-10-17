@@ -10,7 +10,7 @@ const getTotalByBatchAndKodeHandler = async (request, h) => {
     return h
       .response({
         status: "success",
-        data: { batchId, kode, total_harga: total },
+        data: { batchId, kode, total: total },
       })
       .code(200);
   } catch (err) {
@@ -30,7 +30,7 @@ const getTotalFinishedHandler = async (request, h) => {
     return h
       .response({
         status: "success",
-        data: { batchId, kode, total_finished: total },
+        data: { batchId, kode, total: total },
       })
       .code(200);
   } catch (err) {
@@ -50,7 +50,7 @@ const getTotalUnfinishedHandler = async (request, h) => {
     return h
       .response({
         status: "success",
-        data: { batchId, kode, total_unfinished: total },
+        data: { batchId, kode, total: total },
       })
       .code(200);
   } catch (err) {
