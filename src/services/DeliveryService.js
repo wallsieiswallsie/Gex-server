@@ -140,34 +140,21 @@ async getPengantaranActive() {
 }
 
 async getPengantaranArchive() {
-  return await db("deliveries")
-    .join("packages", "deliveries.package_id", "packages.id")
-    .join("invoices", "deliveries.invoice_id", "invoices.id")
-    .where("deliveries.active", false)
-    .andWhere("deliveries.finished", true)
-    .groupBy("deliveries.invoice_id", "invoices.total_price", "invoices.created_at")
-    .select(
-      "deliveries.invoice_id",
-      "invoices.total_price",
-      db.raw("COUNT(deliveries.id) as total_packages")
-    )
-    .orderBy("invoices.created_at", "desc");
-}
-
-async getPengantaranArchiveByPackageFinished() {
-  return await db("deliveries")
-    .join("packages", "deliveries.package_id", "packages.id")
-    .join("invoices", "deliveries.invoice_id", "invoices.id")
-    .where("packages.finished", false)
-    .groupBy("deliveries.invoice_id", "invoices.total_price", "invoices.created_at")
-    .select(
-      "deliveries.invoice_id",
-      "invoices.total_price",
-      db.raw("COUNT(deliveries.id) as total_packages")
-    )
-    .orderBy("invoices.created_at", "desc");
-}
-
+    return await db("deliveries")
+      .join("packages", "deliveries.package_id", "packages.id")
+      .join("invoices", "deliveries.invoice_id", "invoices.id")
+      .where("deliveries.active", false)
+      .andWhere("deliveries.finished", true)
+      .groupBy("deliveries.invoice_id", "invoices.total_price", "invoices.created_at")
+      .select(
+        "deliveries.invoice_id",
+        "invoices.total_price",
+        "invoices.created_at",
+        db.raw("COUNT(deliveries.id) as total_packages"),
+        db.raw("json_agg(packages.*) as packages")
+      )
+      .orderBy("invoices.created_at", "desc");
+  }
 }
 
 module.exports = DeliveryService;

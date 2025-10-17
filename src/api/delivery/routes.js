@@ -6,7 +6,6 @@ const {
   getAllPengantaranHandler,
   getPengantaranActiveHandler,
   getPengantaranArchiveHandler,
-  getPengantaranArchiveByPackageFinishedHandler,
 } = require("./handler");
 
 const deliveryRoutes = [
@@ -44,11 +43,6 @@ const deliveryRoutes = [
     method: "GET",
     path: "/pengantaran/{id}",
     handler: getPengantaranByIdHandler,
-  },
-  {
-    method: "GET",
-    path: "/deliveries/archive/by-package-finished",
-    handler: getPengantaranArchiveByPackageFinishedHandler,
   },
 ];
 

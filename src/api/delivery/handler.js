@@ -95,42 +95,11 @@ const getPengantaranActiveHandler = async (request, h) => {
 
 const getPengantaranArchiveHandler = async (request, h) => {
   try {
-    const result = await deliveryService.getPengantaranArchive();
-
-    return h
-      .response({
-        status: "success",
-        data: result,
-      })
-      .code(200);
+    const data = await deliveryService.getPengantaranArchive();
+    return h.response({ data }).code(200);
   } catch (err) {
-    return h
-      .response({
-        status: "fail",
-        message: err.message,
-      })
-      .code(400);
-  }
-};
-
-const getPengantaranArchiveByPackageFinishedHandler = async (request, h) => {
-  try {
-    const service = new DeliveryService();
-    const result = await service.getPengantaranArchiveByPackageFinished();
-
-    return h.response({
-      status: "success",
-      data: result,
-    });
-  } catch (error) {
-    console.error("Error fetching archive by package finished:", error);
-
-    return h
-      .response({
-        status: "fail",
-        message: "Terjadi kesalahan pada server",
-      })
-      .code(500);
+    console.error(err);
+    return h.response({ error: "Gagal mengambil arsip pengantaran" }).code(500);
   }
 };
 
@@ -142,5 +111,4 @@ module.exports = {
   getAllPengantaranHandler,
   getPengantaranActiveHandler,
   getPengantaranArchiveHandler,
-  getPengantaranArchiveByPackageFinishedHandler,
 };
