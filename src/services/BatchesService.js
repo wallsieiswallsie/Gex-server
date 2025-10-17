@@ -124,7 +124,12 @@ async function createBatchKapal(
   return { batchId, totalWeight, totalValue };
 }
 
-async function createBatchPesawat(packageIds = [], namaPIC, tanggalKirim, namaVendor, userId) {
+async function createBatchPesawat(
+  packageIds = [],
+  namaPIC,
+  tanggalKirim,
+  namaVendor,
+  userId) {
   let totalWeight = 0;
   let totalValue = 0;
   let batchVia = null;
