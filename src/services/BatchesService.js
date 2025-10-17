@@ -235,7 +235,7 @@ async function getBatchPesawatWithPackages(batchId) {
     .where("bp.id_batch", batchId)
     .select(
       "p.id as package_id",
-      "p.name",
+      "p.nama",
       "p.resi",
       "p.berat_dipakai",
       "p.harga"
@@ -327,7 +327,6 @@ async function addKarungToBatch(batchId, noKarung) {
 
   return inserted;
 }
-
 
 async function getBatchWithKarung(batchId) {
   // ambil info batch
