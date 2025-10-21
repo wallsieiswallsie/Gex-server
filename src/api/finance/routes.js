@@ -3,6 +3,7 @@ const {
   getTotalFinishedHandler,
   getTotalUnfinishedHandler,
   addPaymentMethodHandler,
+  getFinishedGroupedByPaymentMethodHandler,
 } = require("./handler");
 
 const financeRoutes = [
@@ -25,6 +26,11 @@ const financeRoutes = [
     method: "PATCH",
     path: "/finance/payment_method",
     handler: addPaymentMethodHandler,
+  },
+  {
+    method: "GET",
+    path: "/finance/{batchId}/{kode}/finished/grouped",
+    handler: getFinishedGroupedByPaymentMethodHandler,
   },
 ];
 

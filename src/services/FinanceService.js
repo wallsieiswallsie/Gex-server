@@ -57,6 +57,24 @@ class FinanceService {
     return updated;
   }
 
+  async getFinishedGroupedByPaymentMethod(batchId, kode) {
+    const results = await db("batch_packages as bp")
+      .join("packages as p", "bp.package_id", "p.id")
+      .join("invoice_packages as ip", "p.id", "ip.package_id")
+      .join("invoices as i", "ip.invoice_id", "i.id")
+      .where("bp.id_batch", batchId)
+      .andWhere("p.kode", kode)
+      .andWhere("p.finished", true)
+      .groupBy("i.payment_method")
+      .select("i.payment_method")
+      .sum("p.harga as total_harga");
+
+    return results.map(r => ({
+      payment_method: r.payment_method,
+      total_harga: Number(r.total_harga) || 0
+    }));
+  }
+
 }
 
 module.exports = FinanceService;

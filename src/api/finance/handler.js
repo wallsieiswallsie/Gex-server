@@ -83,10 +83,31 @@ const addPaymentMethodHandler = async (request, h) => {
   }
 };
 
+// 🔹 GET /finance/{batchId}/{kode}/finished/grouped
+const getFinishedGroupedByPaymentMethodHandler = async (request, h) => {
+  try {
+    const { batchId, kode } = request.params;
+
+    const grouped = await financeService.getFinishedGroupedByPaymentMethod(batchId, kode);
+    return h
+      .response({
+        status: "success",
+        data: { batchId, kode, grouped },
+      })
+      .code(200);
+  } catch (err) {
+    console.error("getFinishedGroupedByPaymentMethodHandler error:", err);
+    return h
+      .response({ status: "fail", message: "Terjadi kesalahan server" })
+      .code(500);
+  }
+};
+
 
 module.exports = {
   getTotalByBatchAndKodeHandler,
   getTotalFinishedHandler,
   getTotalUnfinishedHandler,
   addPaymentMethodHandler,
+  getFinishedGroupedByPaymentMethodHandler,
 };
