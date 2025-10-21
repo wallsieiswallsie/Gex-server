@@ -25,6 +25,22 @@ class InvoicesService {
       throw new NotFoundError("Paket tidak ditemukan");
     }
 
+    const kodeList = packages.map((p) => p.kode);
+    
+      const hasJKSOQA = kodeList.some((k) => k === "JKSOQA");
+      const hasJPSOQA = kodeList.some((k) => k === "JPSOQA");
+      const hasJKSOQB = kodeList.some((k) => k === "JKSOQB");
+      const hasJPSOQB = kodeList.some((k) => k === "JPSOQB");
+
+      // Jika ada campuran cabang A dan B, tolak
+      if (
+        (hasJKSOQA || hasJPSOQA) && (hasJKSOQB || hasJPSOQB)
+      ) {
+        throw new InvariantError(
+          "Paket dari cabang Remu (QA) dan Aimas (QB) tidak boleh digabung dalam satu invoice"
+        );
+    }
+
     // hitung total harga
     const totalPrice = packages.reduce((sum, p) => sum + Number(p.harga), 0);
 
