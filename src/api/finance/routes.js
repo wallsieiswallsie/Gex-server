@@ -3,7 +3,6 @@ const {
   getTotalFinishedHandler,
   getTotalUnfinishedHandler,
   addPaymentMethodHandler,
-
 } = require("./handler");
 
 const financeRoutes = [
