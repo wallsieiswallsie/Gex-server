@@ -24,7 +24,7 @@ const financeRoutes = [
   },
   {
     method: "POST",
-    path: "/payment_method",
+    path: "/finance/payment_method",
     handler: addPaymentMethodHandler,
   },
 ];
