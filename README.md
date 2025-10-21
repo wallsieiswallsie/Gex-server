@@ -1,1 +1,1 @@
-Server for GEx-Client
+Server backend for GEx-Client
