@@ -2,6 +2,8 @@ const {
   getTotalByBatchAndKodeHandler,
   getTotalFinishedHandler,
   getTotalUnfinishedHandler,
+  addPaymentMethodHandler,
+
 } = require("./handler");
 
 const financeRoutes = [
@@ -19,6 +21,11 @@ const financeRoutes = [
     method: "GET",
     path: "/finance/{batchId}/{kode}/unfinished",
     handler: getTotalUnfinishedHandler,
+  },
+  {
+    method: "POST",
+    path: "/payment_method",
+    handler: addPaymentMethodHandler,
   },
 ];
 
