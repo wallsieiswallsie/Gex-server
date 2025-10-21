@@ -259,6 +259,7 @@ class InvoicesService {
 
       for (const invoiceId of invoiceIds) {
         await financeService.addPaymentMethod(invoiceId, paymentMethod, trx);
+        if (!paymentMethod) throw new InvariantError("Payment method wajib diisi");
       }
 
       return {

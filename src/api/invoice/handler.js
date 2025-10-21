@@ -106,10 +106,10 @@ const addPackagesByResiToExistingInvoiceHandler = async (request, h) => {
 const archiveInvoicesHandler = async (request, h) => {
   try {
     // Ambil array invoiceIds dari body request
-    const { invoiceIds, paymentMethod  } = request.payload;
+    const { invoiceIds, paymentMethod } = request.payload;
 
     // Panggil service untuk arsip paket dari invoice
-    const result = await service.archivePackagesByInvoices(invoiceIds, paymentMethod );
+    const result = await service.archivePackagesByInvoices(invoiceIds, paymentMethod);
 
     return h.response({
       status: "success",
