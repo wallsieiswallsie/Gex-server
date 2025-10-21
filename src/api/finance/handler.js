@@ -59,10 +59,50 @@ const getTotalUnfinishedHandler = async (request, h) => {
       .response({ status: "fail", message: "Terjadi kesalahan server" })
       .code(500);
   }
+
+
+};
+
+const addPaymentMethodHandler = async (request, h) => {
+  try {
+    const { invoice_id, payment_method } = request.payload;
+
+    // Validasi input sederhana
+    if (!invoice_id || !payment_method) {
+      return h
+        .response({
+          status: "fail",
+          message: "Field invoice_id dan payment_method wajib diisi.",
+        })
+        .code(400);
+    }
+
+    const updatedInvoice = await financeService.addPaymentMethod(
+      invoice_id,
+      payment_method
+    );
+
+    return h
+      .response({
+        status: "success",
+        message: "Payment method berhasil ditambahkan ke invoice.",
+        data: updatedInvoice,
+      })
+      .code(200);
+  } catch (err) {
+    console.error("addPaymentMethodHandler error:", err);
+    return h
+      .response({
+        status: "fail",
+        message: err.message || "Terjadi kesalahan server",
+      })
+      .code(500);
+  }
 };
 
 module.exports = {
   getTotalByBatchAndKodeHandler,
   getTotalFinishedHandler,
   getTotalUnfinishedHandler,
+  addPaymentMethodHandler,
 };
