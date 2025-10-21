@@ -37,21 +37,21 @@ class FinanceService {
     return result?.total_harga || 0;
   }
 
-  async addPaymentMethod(invoiceId, paymentMethod) {
-    const invoice = await db("invoices").where("id", invoiceId).first();
-    if (!invoice) {
-      throw new Error(`Invoice id tidak ditemukan!`);
-    }
+  async addPaymentMethod(invoiceId, paymentMethod, trx = db) {
+  const invoice = await trx("invoices").where("id", invoiceId).first();
+  if (!invoice) {
+    throw new Error(`Invoice id tidak ditemukan!`);
+  }
 
-    await db("invoices")
+  await trx("invoices")
     .where("id", invoiceId)
     .update({
-      payment_method: paymentMethod
+      payment_method: paymentMethod,
     });
 
-    const updated = await db("invoices").where("id", invoiceId).first();
-    return updated;
-  }
+  const updated = await trx("invoices").where("id", invoiceId).first();
+  return updated;
+}
 
 }
 

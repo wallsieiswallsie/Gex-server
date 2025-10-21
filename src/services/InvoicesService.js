@@ -6,6 +6,8 @@ const StatusService = require("./StatusService");
 const statusService = new StatusService();
 const PackageServices = require("./PackageServices");
 const packageService = new PackageServices();
+const FinanceService = require("../services/FinanceService");
+const financeService = new FinanceService();
 
 class InvoicesService {
   // Membuat invoice baru
@@ -255,10 +257,15 @@ class InvoicesService {
         await packageService.removeActivePackageById({ packageId, trx });
       }
 
+      for (const invoiceId of invoiceIds) {
+        await financeService.addPaymentMethod(invoiceId, paymentMethod, trx);
+      }
+
       return {
         message: "Semua paket dari invoice yang dipilih telah diarsipkan",
         invoiceIds,
         archivedPackageIds: packageIds,
+        paymentMethod,
       };
     });
   }
