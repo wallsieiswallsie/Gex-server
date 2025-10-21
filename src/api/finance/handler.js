@@ -68,24 +68,21 @@ const addPaymentMethodHandler = async (request, h) => {
   const { invoiceIds, payment_method } = request.payload;
 
   try {
-    const updated = await db("invoices")
-      .whereIn("id", invoiceIds)
-      .update({ payment_method })
-      .returning("*");
-
+    const updated = await financeService.addPaymentMethod(invoiceIds, payment_method);
     return h.response({
       status: "success",
       message: "Metode pembayaran berhasil ditambahkan",
       data: updated,
     });
   } catch (err) {
-    console.error(err);
+    console.error("addPaymentMethodHandler error:", err);
     return h.response({
       status: "fail",
       message: err.message,
-    });
+    }).code(500);
   }
 };
+
 
 module.exports = {
   getTotalByBatchAndKodeHandler,
