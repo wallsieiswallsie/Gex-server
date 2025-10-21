@@ -175,21 +175,24 @@ class InvoicesService {
         );
       }
 
-    const kodeList = packages.map((p) => p.kode);
-    
-      const hasJKSOQA = kodeList.some((k) => k === "JKSOQA");
-      const hasJPSOQA = kodeList.some((k) => k === "JPSOQA");
-      const hasJKSOQB = kodeList.some((k) => k === "JKSOQB");
-      const hasJPSOQB = kodeList.some((k) => k === "JPSOQB");
+      const existingPackages = await trx("packages")
+        .join("invoice_packages", "packages.id", "invoice_packages.package_id")
+        .where("invoice_packages.invoice_id", invoiceId)
+        .select("packages.kode");
 
-      // Jika ada campuran cabang A dan B, tolak
-      if (
-        (hasJKSOQA || hasJPSOQA) && (hasJKSOQB || hasJPSOQB)
-      ) {
+      // Gabungkan kode lama dan kode baru
+      const allKode = [...existingPackages.map((p) => p.kode), ...packages.map((p) => p.kode)];
+
+      const hasJKSOQA = allKode.includes("JKSOQA");
+      const hasJPSOQA = allKode.includes("JPSOQA");
+      const hasJKSOQB = allKode.includes("JKSOQB");
+      const hasJPSOQB = allKode.includes("JPSOQB");
+
+      if ((hasJKSOQA || hasJPSOQA) && (hasJKSOQB || hasJPSOQB)) {
         throw new InvariantError(
           "Paket dari cabang Remu (QA) dan Aimas (QB) tidak boleh digabung dalam satu invoice"
         );
-    }
+      }
 
       const invoicePackages = packageIds.map((pid) => ({
         invoice_id: invoiceId,
