@@ -49,7 +49,7 @@ class FinanceService {
       payment_method: paymentMethod,
     });
 
-  const updated = await trx("invoices").where("id", invoiceId).first();
+  const updated = await trx("invoices").where("id", invoiceIds).first();
   return updated;
 }
 
