@@ -37,14 +37,14 @@ class FinanceService {
     return result?.total_harga || 0;
   }
 
-  async addPaymentMethod(invoiceId, paymentMethod, trx = db) {
-  const invoice = await trx("invoices").where("id", invoiceId).first();
+  async addPaymentMethod(invoiceIds, paymentMethod, trx = db) {
+  const invoice = await trx("invoices").where("id", invoiceIds).first();
   if (!invoice) {
     throw new Error(`Invoice id tidak ditemukan!`);
   }
 
   await trx("invoices")
-    .where("id", invoiceId)
+    .where("id", invoiceIds)
     .update({
       payment_method: paymentMethod,
     });
