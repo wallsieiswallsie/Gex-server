@@ -65,10 +65,10 @@ const getTotalUnfinishedHandler = async (request, h) => {
 };
 
 const addPaymentMethodHandler = async (request, h) => {
-  const { invoiceIds, payment_method } = request.payload;
+  const { invoiceIds, paymentMethod } = request.payload;
 
   try {
-    const updated = await financeService.addPaymentMethod(invoiceIds, payment_method);
+    const updated = await financeService.addPaymentMethod(invoiceIds, paymentMethod);
     return h.response({
       status: "success",
       message: "Metode pembayaran berhasil ditambahkan",
