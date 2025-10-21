@@ -1,3 +1,4 @@
+const db = require("../../db")
 const FinanceService = require("../../services/FinanceService");
 const financeService = new FinanceService();
 
