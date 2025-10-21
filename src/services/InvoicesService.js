@@ -58,6 +58,7 @@ class InvoicesService {
      const invoices = await db("invoices")
       .join("invoice_packages", "invoices.id", "invoice_packages.invoice_id")
       .join("active_packages", "invoice_packages.package_id", "active_packages.package_id")
+      .join("packages", "invoice_packages.package_id", "packages.id")
       .groupBy(
         "invoices.id",
         "invoices.nama_invoice",
