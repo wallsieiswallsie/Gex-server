@@ -22,7 +22,7 @@ const financeRoutes = [
     handler: getTotalUnfinishedHandler,
   },
   {
-    method: "POST",
+    method: "PATCH",
     path: "/finance/payment_method",
     handler: addPaymentMethodHandler,
   },
