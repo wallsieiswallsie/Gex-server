@@ -235,6 +235,7 @@ class InvoicesService {
     if (!Array.isArray(invoiceIds) || invoiceIds.length === 0) {
       throw new InvariantError("Tidak ada invoice yang dipilih");
     }
+    if (!paymentMethod) throw new InvariantError("Payment method wajib diisi");
 
     return await db.transaction(async (trx) => {
       const invoices = await trx("invoices").whereIn("id", invoiceIds);
@@ -257,10 +258,7 @@ class InvoicesService {
         await packageService.removeActivePackageById({ packageId, trx });
       }
 
-      for (const invoiceId of invoiceIds) {
-        await financeService.addPaymentMethod(invoiceId, paymentMethod, trx);
-        if (!paymentMethod) throw new InvariantError("Payment method wajib diisi");
-      }
+      await financeService.addPaymentMethod(invoiceIds, paymentMethod, trx);
 
       return {
         message: "Semua paket dari invoice yang dipilih telah diarsipkan",
