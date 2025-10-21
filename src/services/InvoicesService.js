@@ -231,7 +231,7 @@ class InvoicesService {
     });
   }
 
-  async archivePackagesByInvoices(invoiceIds) {
+  async archivePackagesByInvoices(invoiceIds, paymentMethod) {
     if (!Array.isArray(invoiceIds) || invoiceIds.length === 0) {
       throw new InvariantError("Tidak ada invoice yang dipilih");
     }
