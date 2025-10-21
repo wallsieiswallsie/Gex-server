@@ -55,18 +55,39 @@ class InvoicesService {
   }
 
   async getAllInvoices() {
-    return db("invoices")
+     const invoices = await db("invoices")
       .join("invoice_packages", "invoices.id", "invoice_packages.invoice_id")
       .join("active_packages", "invoice_packages.package_id", "active_packages.package_id")
-      .groupBy("invoices.id")
+      .groupBy(
+        "invoices.id",
+        "invoices.nama_invoice",
+        "invoices.total_price",
+        "invoices.created_at",
+      )
       .distinct("invoices.*")
       .select(
-        "invoices.*",
-        db.raw("COUNT(invoice_packages.package_id) AS package_count")
+        "invoices.id",
+        "invoices.nama_invoice",
+        "invoices.total_price",
+        "invoices.created_at",
+        db.raw("COUNT(invoice_packages.package_id) AS package_count"),
+        db.raw("ARRAY_AGG(packages.kode) AS kode_list")
       )
       .orderBy("invoices.created_at", "desc");
-  }
 
+      return invoices.map((inv) => {
+        const kodeList = inv.kode_list || [];
+        let cabang = null;
+
+        if (kodeList.some((k) => ["JKSOQA", "JPSOQA"].includes(k))) {
+          cabang = "Remu";
+        } else if (kodeList.some((k) => ["JKSOQB", "JPSOQB"].includes(k))) {
+          cabang = "Aimas";
+        }
+
+        return { ...inv, cabang };
+      });
+    }
 
   async getArchivedInvoices() {
     const archivedInvoices = await db("invoices")
