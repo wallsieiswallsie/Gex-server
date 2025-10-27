@@ -199,18 +199,14 @@ class PackageServices {
     }
   }
 
-  async addActivePackages ({ packageId }) {
-    const packages = await db("packages")
-    .where({ id: packageId })
-    .first();
-
+  async addActivePackages ({ packageId }, trx) {
+    const t = trx || db; // pakai trx jika ada
+    const packages = await t("packages").where({ id: packageId }).first();
     if (!packages) throw new NotFoundError("Paket tidak ditemukan!");
 
-    const [result] = await db("active_packages")
-    .insert({
-      package_id: packageId,
-    })
-    .returning("*");
+    const [result] = await t("active_packages")
+      .insert({ package_id: packageId })
+      .returning("*");
 
     if (!result) throw new InvariantError("Paket gagal diinput");
     return result;

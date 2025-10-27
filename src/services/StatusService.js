@@ -1,7 +1,7 @@
 const db = require("../db");
 
 class StatusService {
-  async addStatus(packageId, status, batchId = null, trx = db) {
+  async addStatus(packageId, status, batchId = null, trx = t) {
     if (!status || typeof status !== "number") {
       throw new Error("Status harus berupa angka");
     }
