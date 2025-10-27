@@ -22,9 +22,11 @@ async function insertBatchPackages(batchId, packageIds, via) {
   }
 }
 
-async function addPackageToBatch(batchId, resi, via, noKarung = null) {
+async function addPackageToBatch(batchId, resi, via, noKarung = null, trx = null) {
+  const knexInstance = trx || db;
+
   // Ambil data paket
-  const packageData = await db("packages").where({ resi }).first();
+  const packageData = await knexInstance("packages").where({ resi }).first();
   if (!packageData) {
     throw new Error(`Paket dengan resi ${resi} tidak ditemukan`);
   }
@@ -32,7 +34,7 @@ async function addPackageToBatch(batchId, resi, via, noKarung = null) {
   const packageId = packageData.id;
 
   // Cek apakah paket sudah ada di batch ini
-  const exists = await db("batch_packages")
+  const exists = await knexInstance("batch_packages")
     .where({ id_batch: batchId, package_id: packageId })
     .first();
 
@@ -51,13 +53,16 @@ async function addPackageToBatch(batchId, resi, via, noKarung = null) {
     insertData.no_karung = noKarung;
   }
 
-  await db("batch_packages").insert(insertData);
+  await knexInstance("batch_packages").insert(insertData);
 
   // Tambah status paket
-  await statusService.addStatus(packageId, 2, batchId);
+  // (Hanya jalankan setelah transaksi utama selesai)
+  if (!trx) {
+    await statusService.addStatus(packageId, 2, batchId);
+  }
 
   // Ambil semua paket di batch ini untuk hitung ulang total
-  const packagesInBatch = await db("batch_packages as bp")
+  const packagesInBatch = await knexInstance("batch_packages as bp")
     .join("packages as p", "bp.package_id", "p.id")
     .where("bp.id_batch", batchId)
     .select("p.berat_dipakai", "p.harga");
@@ -66,11 +71,11 @@ async function addPackageToBatch(batchId, resi, via, noKarung = null) {
 
   // Update total di batch masing-masing via
   if (via === "Kapal") {
-    await db("batches_kapal")
+    await knexInstance("batches_kapal")
       .where("id", batchId)
       .update({ total_berat: totalWeight, total_value: totalValue });
   } else if (via === "Pesawat") {
-    await db("batches_pesawat")
+    await knexInstance("batches_pesawat")
       .where("id", batchId)
       .update({ total_berat: totalWeight, total_value: totalValue });
   }
