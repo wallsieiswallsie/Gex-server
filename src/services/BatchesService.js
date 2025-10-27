@@ -322,6 +322,32 @@ async function getBatchWithKarung(batchId) {
   return { ...batch, karung: karungWithPackages };
 }
 
+// 🔹 Ambil paket berdasarkan no karung
+async function getPackagesByKarung(batchId, noKarung, search = "") {
+  const karung = await db("karung")
+    .where({ id_batch: batchId, no_karung: noKarung })
+    .first();
+
+  if (!karung) {
+    throw new NotFoundError("Karung tidak ditemukan di batch ini");
+  }
+
+  let query = db("package_karung as pk")
+    .join("packages as p", "pk.package_id", "p.id")
+    .where("pk.karung_id", karung.id)
+    .select("p.id", "p.nama", "p.resi", "p.berat_dipakai", "p.harga");
+
+  if (search) {
+    query = query.andWhere((qb) => {
+      qb.where("p.resi", "ilike", `%${search}%`)
+        .orWhere("p.nama", "ilike", `%${search}%`);
+    });
+  }
+
+  const packages = await query;
+  return packages;
+}
+
 
 // ─────────────────────────────
 // 🔹 Export
@@ -338,4 +364,5 @@ module.exports = {
   getBatchKapalWithPackages,
   getBatchPesawatWithPackages,
   getBatchWithKarung,
+  getPackagesByKarung,
 };
