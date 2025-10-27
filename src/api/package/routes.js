@@ -13,7 +13,7 @@ const packageRoutes = [
     path: "/packages",
     options: {
       payload: {
-        output: "stream",
+        output: "data",
         parse: true,
         multipart: true,
         maxBytes: 5 * 1024 * 1024, // 5 MB

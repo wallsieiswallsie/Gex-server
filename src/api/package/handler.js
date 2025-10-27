@@ -73,10 +73,9 @@ const addActivePackagesHandler = async (request, h) => {
     const result = await service.addActivePackages(Number(packageId));
     return h.response({ status: "success", data: result }).code(200);
   } catch (err) {
-    console.error("Error addActivePackagesHandler").code(
-      err instanceof InvariantError ? 400 : 500
-    );
-  }
+      console.error("Error addActivePackagesHandler:", err);
+      throw err instanceof InvariantError ? Boom.badRequest(err.message) : Boom.internal("Server error");
+    }
 };
 
 const addArchivePackagesHandler = async (request, h) => {
