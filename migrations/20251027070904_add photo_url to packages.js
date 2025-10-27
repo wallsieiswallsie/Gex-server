@@ -1,6 +1,6 @@
 exports.up = function(knex) {
   return knex.schema.table('packages', function(table) {
-    table.string('photo_url', 500).nullable()
+    table.text('photo_url').nullable()
       .comment('URL foto paket yang disimpan di Google Cloud Storage');
   });
 };
