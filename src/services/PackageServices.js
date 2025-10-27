@@ -7,7 +7,6 @@ const service = new StatusService();
 const { Storage } = require('@google-cloud/storage');
 require('dotenv').config();
 
-// Setup GCS
 const credentials = JSON.parse(process.env.GCLOUD_CREDENTIALS);
 const storage = new Storage({
   projectId: process.env.GCLOUD_PROJECT_ID,
@@ -22,43 +21,20 @@ async function uploadToGCS(buffer, filename, mimetype) {
 
   console.log(`[GCS] Start uploading file: ${filename}, size: ${buffer.length} bytes`);
 
-  return new Promise((resolve, reject) => {
-    const blob = bucket.file(filename);
-    const blobStream = blob.createWriteStream({
-      resumable: false, // bisa ganti true untuk file besar
-      metadata: { contentType: mimetype || "application/octet-stream" },
-    });
-
-    blobStream.on('error', (err) => {
-      console.error("[GCS] Upload error:", err);
-      reject(err);
-    });
-
-    blobStream.on('finish', async () => {
-      console.log("[GCS] Upload finished, setting public URL...");
-
-      try {
-        // Pastikan bisa akses publik
-        await blob.makePublic();
-        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-        console.log("[GCS] File public URL:", publicUrl);
-
-        // Cek apakah file benar-benar ada di bucket
-        const [exists] = await blob.exists();
-        if (!exists) {
-          throw new Error("File tidak ditemukan di bucket setelah upload");
-        }
-
-        resolve(publicUrl);
-      } catch (err) {
-        console.error("[GCS] Error setting public URL:", err);
-        reject(err);
-      }
-    });
-
-    // Mulai upload
-    blobStream.end(buffer);
+  const blob = bucket.file(filename);
+  await blob.save(buffer, {
+    contentType: mimetype || "application/octet-stream",
+    resumable: false,
   });
+
+  // Generate signed URL, misal berlaku 24 jam
+  const [signedUrl] = await blob.getSignedUrl({
+    action: 'read',
+    expires: Date.now() + 24 * 60 * 60 * 1000, // 24 jam
+  });
+
+  console.log("[GCS] File signed URL:", signedUrl);
+  return signedUrl;
 }
 
 class PackageServices {
@@ -90,9 +66,9 @@ class PackageServices {
       // Upload foto jika ada
       let photoUrl = null;
       const file = data.photo;
-      if (file && file.hapi && file._data) {
-        const uniqueFilename = `${newPackage.id}-${Date.now()}-${file.hapi.filename}`;
-        photoUrl = await uploadToGCS(file._data, uniqueFilename, file.hapi.headers['content-type']);
+      if (file) {
+        const uniqueFilename = `${newPackage.id}-${Date.now()}-${file.name || file.hapi?.filename}`;
+        photoUrl = await uploadToGCS(file._data || file, uniqueFilename, file.type || file.hapi?.headers['content-type']);
       }
 
       if (photoUrl) {
