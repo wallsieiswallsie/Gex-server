@@ -68,9 +68,11 @@ class PackageServices {
       const file = data.photo;
       if (file) {
         const uniqueFilename = `${newPackage.id}-${Date.now()}-${file.name || file.hapi?.filename}`;
+        // Upload ke GCS tanpa ACL publik
         photoUrl = await uploadToGCS(file._data || file, uniqueFilename, file.type || file.hapi?.headers['content-type']);
       }
 
+      // Simpan URL sementara di DB
       if (photoUrl) {
         await trx("packages").where({ id: newPackage.id }).update({ photo_url: photoUrl });
         newPackage.photo_url = photoUrl;
