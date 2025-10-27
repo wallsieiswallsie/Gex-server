@@ -300,6 +300,29 @@ async function getBatchPesawatWithPackages(batchId) {
 }
 
 
+// 🔹 Ambil batch kapal dengan daftar karung & paket di dalamnya
+async function getBatchWithKarung(batchId) {
+  const batch = await db("batches_kapal").where("id", batchId).first();
+  if (!batch) throw new NotFoundError("Batch tidak ditemukan");
+
+  // Ambil semua karung di batch ini
+  const karungList = await db("karung").where("id_batch", batchId);
+
+  // Untuk setiap karung, ambil paketnya
+  const karungWithPackages = await Promise.all(
+    karungList.map(async (karung) => {
+      const packages = await db("package_karung as pk")
+        .join("packages as p", "pk.package_id", "p.id")
+        .where("pk.karung_id", karung.id)
+        .select("p.id", "p.nama", "p.resi", "p.berat_dipakai", "p.harga");
+      return { ...karung, packages };
+    })
+  );
+
+  return { ...batch, karung: karungWithPackages };
+}
+
+
 // ─────────────────────────────
 // 🔹 Export
 // ─────────────────────────────
@@ -314,4 +337,5 @@ module.exports = {
   getAllBatchesPesawat,
   getBatchKapalWithPackages,
   getBatchPesawatWithPackages,
+  getBatchWithKarung,
 };
