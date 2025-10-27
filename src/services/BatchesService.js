@@ -22,17 +22,16 @@ async function insertBatchPackages(batchId, packageIds, via) {
   }
 }
 
-async function addPackageToBatch(batchId, resi, via) {
-  const packageData = await db("packages")
-    .where({ resi })
-    .first();
-
+async function addPackageToBatch(batchId, resi, via, noKarung = null) {
+  // Ambil data paket
+  const packageData = await db("packages").where({ resi }).first();
   if (!packageData) {
     throw new Error(`Paket dengan resi ${resi} tidak ditemukan`);
   }
 
   const packageId = packageData.id;
 
+  // Cek apakah paket sudah ada di batch ini
   const exists = await db("batch_packages")
     .where({ id_batch: batchId, package_id: packageId })
     .first();
@@ -41,25 +40,31 @@ async function addPackageToBatch(batchId, resi, via) {
     throw new Error(`Paket dengan resi ${resi} sudah ada di batch ini`);
   }
 
-  // Tambahkan paket ke batch
-  await db("batch_packages").insert({
+  // Insert ke batch_packages — tambahkan no_karung hanya untuk via Kapal
+  const insertData = {
     id_batch: batchId,
     package_id: packageId,
     via,
-  });
+  };
 
+  if (via === "Kapal" && noKarung) {
+    insertData.no_karung = noKarung;
+  }
+
+  await db("batch_packages").insert(insertData);
+
+  // Tambah status paket
   await statusService.addStatus(packageId, 2, batchId);
 
-  // Ambil semua paket di batch ini
+  // Ambil semua paket di batch ini untuk hitung ulang total
   const packagesInBatch = await db("batch_packages as bp")
     .join("packages as p", "bp.package_id", "p.id")
     .where("bp.id_batch", batchId)
     .select("p.berat_dipakai", "p.harga");
 
-  // Hitung total berat dan total value
   const { totalWeight, totalValue } = calculateBatchDetails(packagesInBatch);
 
-  // Update total_berat & total_value di batch
+  // Update total di batch masing-masing via
   if (via === "Kapal") {
     await db("batches_kapal")
       .where("id", batchId)
@@ -72,7 +77,7 @@ async function addPackageToBatch(batchId, resi, via) {
 
   return {
     success: true,
-    message: `Paket dengan resi ${resi} berhasil ditambahkan ke batch`,
+    message: `Paket ${resi} berhasil ditambahkan ke batch`,
     totalWeight,
     totalValue,
   };
