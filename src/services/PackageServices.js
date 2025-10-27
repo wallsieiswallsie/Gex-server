@@ -40,12 +40,11 @@ async function uploadToGCS(buffer, filename, mimetype) {
 
 class PackageServices {
   async createPackage(data) {
-    const trx = await db.transaction(); // pakai transaction agar aman
+    const trx = await db.transaction();
 
     try {
       const details = calculatePackageDetails(data);
 
-      // 1. Insert record baru tanpa photo dulu
       const [newPackage] = await trx("packages")
         .insert({
           nama: data.nama || "",
@@ -61,11 +60,11 @@ class PackageServices {
           invoiced: false,
           created_at: new Date(),
           updated_at: new Date(),
-          photo_url: null, // sementara null
+          photo_url: null,
         })
         .returning("*");
 
-      // 2. Upload foto jika ada
+      // Upload foto jika ada
       let photoUrl = null;
       const file = data.photo;
       if (file && file.hapi && file._data) {
@@ -73,19 +72,16 @@ class PackageServices {
         photoUrl = await uploadToGCS(file._data, uniqueFilename, file.hapi.headers['content-type']);
       }
 
-      // 3. Update record dengan URL foto
       if (photoUrl) {
         await trx("packages").where({ id: newPackage.id }).update({ photo_url: photoUrl });
-        newPackage.photo_url = photoUrl; // update object untuk response
+        newPackage.photo_url = photoUrl;
       }
 
-      // 4. Tambah status & active_packages
+      // Tambah status & active_packages pakai trx
       await service.addStatus(newPackage.id, 1, null, trx);
       await this.addActivePackages({ packageId: newPackage.id }, trx);
 
-      // 5. Commit transaction
       await trx.commit();
-
       return newPackage;
 
     } catch (err) {
@@ -199,8 +195,9 @@ class PackageServices {
     }
   }
 
-  async addActivePackages ({ packageId }, trx) {
-    const t = trx || db; // pakai trx jika ada
+  async addActivePackages({ packageId }, trx = null) {
+    const t = trx || db; // pakai transaction jika ada
+
     const packages = await t("packages").where({ id: packageId }).first();
     if (!packages) throw new NotFoundError("Paket tidak ditemukan!");
 

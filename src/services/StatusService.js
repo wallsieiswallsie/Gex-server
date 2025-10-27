@@ -1,7 +1,9 @@
 const db = require("../db");
 
 class StatusService {
-  async addStatus(packageId, status, batchId = null, trx = t) {
+  async addStatus(packageId, status, batchId = null, trx = null) {
+    const t = trx || db;
+
     if (!status || typeof status !== "number") {
       throw new Error("Status harus berupa angka");
     }
@@ -14,21 +16,18 @@ class StatusService {
       if (pkg.invoiced === true && status < 6) {
         const now = new Date();
         await t("package_status")
-          .insert({
-            package_id: packageId,
-            status: 5,
-            created_at: now,
-          })
+          .insert({ package_id: packageId, status: 5, created_at: now })
           .onConflict("package_id")
-          .merge({
-            status: 5,
-            created_at: now,
-          });
+          .merge({ status: 5, created_at: now });
         return;
       }
     }
 
     const now = new Date();
+    await t("package_status")
+      .insert({ package_id: packageId, status, created_at: now })
+      .onConflict("package_id")
+      .merge({ status, created_at: now });
 
     switch (status) {
       case 1: {
