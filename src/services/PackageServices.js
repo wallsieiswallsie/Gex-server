@@ -15,11 +15,13 @@ class PackageServices {
       let photoUrl = null;
       const file = data.photo;
       if (file && file.hapi && file._data) {
+        console.log("📸 File detected:", file.hapi.filename); // log sebelum upload
         photoUrl = await uploadToGCS({
           originalname: file.hapi.filename,
           buffer: file._data,
           mimetype: file.hapi.headers["content-type"],
         });
+        console.log("✅ File uploaded URL:", photoUrl); // log sesudah upload
       }
 
       const [newPackage] = await db("packages")
