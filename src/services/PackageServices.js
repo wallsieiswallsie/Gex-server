@@ -25,12 +25,16 @@ async function uploadToGCS(buffer, filename, mimetype) {
   await blob.save(buffer, {
     contentType: mimetype || "application/octet-stream",
     resumable: false,
+    metadata: {
+      // metadata optional
+      uploadedBy: "package-service",
+    },
   });
 
-  // Generate signed URL, misal berlaku 24 jam
+  // generate signed URL 24 jam
   const [signedUrl] = await blob.getSignedUrl({
-    action: 'read',
-    expires: Date.now() + 24 * 60 * 60 * 1000, // 24 jam
+    action: "read",
+    expires: Date.now() + 24 * 60 * 60 * 1000,
   });
 
   console.log("[GCS] File signed URL:", signedUrl);
@@ -44,6 +48,7 @@ class PackageServices {
     try {
       const details = calculatePackageDetails(data);
 
+      // simpan package dulu tanpa foto
       const [newPackage] = await trx("packages")
         .insert({
           nama: data.nama || "",
@@ -64,21 +69,22 @@ class PackageServices {
         .returning("*");
 
       // Upload foto jika ada
-      let photoUrl = null;
-      const file = data.photo;
-      if (file) {
-        const uniqueFilename = `${newPackage.id}-${Date.now()}-${file.name || file.hapi?.filename}`;
-        // Upload ke GCS tanpa ACL publik
-        photoUrl = await uploadToGCS(file._data || file, uniqueFilename, file.type || file.hapi?.headers['content-type']);
+      if (data.photo) {
+        const uniqueFilename = `${newPackage.id}-${Date.now()}-${data.photo.name || "file"}`;
+        const signedUrl = await uploadToGCS(
+          data.photo._data || data.photo,
+          uniqueFilename,
+          data.photo.type || "image/jpeg"
+        );
+
+        await trx("packages")
+          .where({ id: newPackage.id })
+          .update({ photo_url: signedUrl });
+
+        newPackage.photo_url = signedUrl;
       }
 
-      // Simpan URL sementara di DB
-      if (photoUrl) {
-        await trx("packages").where({ id: newPackage.id }).update({ photo_url: photoUrl });
-        newPackage.photo_url = photoUrl;
-      }
-
-      // Tambah status & active_packages pakai trx
+      // Tambah status & active_packages
       await service.addStatus(newPackage.id, 1, null, trx);
       await this.addActivePackages({ packageId: newPackage.id }, trx);
 
