@@ -4,12 +4,23 @@ const NotFoundError = require("../exceptions/NotFoundError");
 const { calculatePackageDetails } = require("../utils/calculations");
 const StatusService = require("./StatusService");
 const service = new StatusService();
+const { uploadToGCS } = require("./StorageService");
 
 class PackageServices {
   async createPackage(data) {
     try {
-      
       const details = calculatePackageDetails(data);
+
+      // 🔹 Cek apakah payload punya file foto
+      let photoUrl = null;
+      const file = data.photo;
+      if (file && file.hapi && file._data) {
+        photoUrl = await uploadToGCS({
+          originalname: file.hapi.filename,
+          buffer: file._data,
+          mimetype: file.hapi.headers["content-type"],
+        });
+      }
 
       const [newPackage] = await db("packages")
         .insert({
@@ -26,11 +37,12 @@ class PackageServices {
           invoiced: false,
           created_at: new Date(),
           updated_at: new Date(),
+          photo_url: photoUrl, // 🔹 tambahkan kolom foto
         })
         .returning("*");
 
       await service.addStatus(newPackage.id, 1);
-      await this.addActivePackages({ packageId: newPackage.id })
+      await this.addActivePackages({ packageId: newPackage.id });
 
       return newPackage;
 

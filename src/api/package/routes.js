@@ -11,6 +11,14 @@ const packageRoutes = [
   {
     method: "POST",
     path: "/packages",
+    options: {
+      payload: {
+        output: "stream",
+        parse: true,
+        multipart: true,
+        maxBytes: 5 * 1024 * 1024, // 5 MB
+      },
+    },
     handler: createPackageHandler,
   },
   {
