@@ -323,31 +323,38 @@ async function getBatchWithKarung(batchId) {
 }
 
 // 🔹 Ambil paket berdasarkan no karung
-async function getPackagesByKarung(batchId, noKarung, search = "") {
+// 🔹 Ambil paket berdasarkan no karung
+async function getPackagesByKarung(batchId, noKarung, searchQuery = "") {
   const karung = await db("karung")
     .where({ id_batch: batchId, no_karung: noKarung })
     .first();
 
-  if (!karung) {
-    throw new NotFoundError("Karung tidak ditemukan di batch ini");
-  }
+  if (!karung) throw new NotFoundError("Karung tidak ditemukan di batch ini");
 
   let query = db("package_karung as pk")
     .join("packages as p", "pk.package_id", "p.id")
-    .where("pk.karung_id", karung.id)
-    .select("p.id", "p.nama", "p.resi", "p.berat_dipakai", "p.harga");
+    .select(
+      "p.id",
+      "p.resi",
+      "p.nama",
+      "p.berat_dipakai",
+      "p.harga",
+      "p.created_at"
+    )
+    .where("pk.karung_id", karung.id);
 
-  if (search) {
-    query = query.andWhere((qb) => {
-      qb.where("p.resi", "ilike", `%${search}%`)
-        .orWhere("p.nama", "ilike", `%${search}%`);
+  if (searchQuery) {
+    query = query.where((builder) => {
+      builder
+        .whereILike("p.nama", `%${searchQuery}%`)
+        .orWhereILike("p.resi", `%${searchQuery}%`);
     });
   }
 
   const packages = await query;
-  return packages;
-}
 
+  return { noKarung, batchId, total: packages.length, packages };
+}
 
 // ─────────────────────────────
 // 🔹 Export
