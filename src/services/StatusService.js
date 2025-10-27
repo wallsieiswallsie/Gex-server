@@ -8,12 +8,12 @@ class StatusService {
 
     let pkg = null;
     if (packageId) {
-      pkg = await db("packages").where({ id: packageId }).first();
+      pkg = await t("packages").where({ id: packageId }).first();
       if (!pkg) throw new Error("Paket tidak ditemukan");
 
       if (pkg.invoiced === true && status < 6) {
         const now = new Date();
-        await trx("package_status")
+        await t("package_status")
           .insert({
             package_id: packageId,
             status: 5,
@@ -26,7 +26,6 @@ class StatusService {
           });
         return;
       }
-
     }
 
     const now = new Date();
