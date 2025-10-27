@@ -16,24 +16,47 @@ const storage = new Storage({
 const bucket = storage.bucket(process.env.GCS_BUCKET_NAME);
 
 async function uploadToGCS(buffer, filename, mimetype) {
+  if (!buffer || buffer.length === 0) {
+    throw new Error("File buffer kosong, tidak bisa upload");
+  }
+
+  console.log(`[GCS] Start uploading file: ${filename}, size: ${buffer.length} bytes`);
+
   return new Promise((resolve, reject) => {
     const blob = bucket.file(filename);
     const blobStream = blob.createWriteStream({
-      resumable: false,
-      metadata: { contentType: mimetype },
+      resumable: false, // bisa ganti true untuk file besar
+      metadata: { contentType: mimetype || "application/octet-stream" },
     });
 
-    blobStream.on('error', (err) => reject(err));
+    blobStream.on('error', (err) => {
+      console.error("[GCS] Upload error:", err);
+      reject(err);
+    });
+
     blobStream.on('finish', async () => {
+      console.log("[GCS] Upload finished, setting public URL...");
+
       try {
-        await blob.makePublic(); // agar bisa diakses publik
+        // Pastikan bisa akses publik
+        await blob.makePublic();
         const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+        console.log("[GCS] File public URL:", publicUrl);
+
+        // Cek apakah file benar-benar ada di bucket
+        const [exists] = await blob.exists();
+        if (!exists) {
+          throw new Error("File tidak ditemukan di bucket setelah upload");
+        }
+
         resolve(publicUrl);
       } catch (err) {
+        console.error("[GCS] Error setting public URL:", err);
         reject(err);
       }
     });
 
+    // Mulai upload
     blobStream.end(buffer);
   });
 }
