@@ -22,69 +22,63 @@ async function insertBatchPackages(batchId, packageIds, via) {
   }
 }
 
-async function addPackageToBatch(batchId, resi, via, noKarung = null, trx = null) {
-  const knexInstance = trx || db;
+async function addPackageToBatch(batchId, resi, via = "Pesawat") {
+  let packageId = null;
+  let shouldAddStatus = false;
 
-  // Ambil data paket
-  const packageData = await knexInstance("packages").where({ resi }).first();
-  if (!packageData) {
-    throw new Error(`Paket dengan resi ${resi} tidak ditemukan`);
-  }
+  await db.transaction(async (trx) => {
+    // 1️⃣ Ambil data paket
+    const packageData = await trx("packages").where({ resi }).first();
+    if (!packageData) {
+      throw new Error(`Paket dengan resi ${resi} tidak ditemukan`);
+    }
+    packageId = packageData.id;
 
-  const packageId = packageData.id;
+    // 2️⃣ Cek apakah paket sudah ada di batch ini
+    const exists = await trx("batch_packages")
+      .where({ id_batch: batchId, package_id: packageId })
+      .first();
 
-  // Cek apakah paket sudah ada di batch ini
-  const exists = await knexInstance("batch_packages")
-    .where({ id_batch: batchId, package_id: packageId })
-    .first();
+    if (exists) {
+      throw new Error(`Paket dengan resi ${resi} sudah ada di batch ini`);
+    }
 
-  if (exists) {
-    throw new Error(`Paket dengan resi ${resi} sudah ada di batch ini`);
-  }
+    // 3️⃣ Insert ke batch_packages (tanpa no_karung karena ini pesawat)
+    await trx("batch_packages").insert({
+      id_batch: batchId,
+      package_id: packageId,
+      via: "Pesawat",
+    });
 
-  // Insert ke batch_packages — tambahkan no_karung hanya untuk via Kapal
-  const insertData = {
-    id_batch: batchId,
-    package_id: packageId,
-    via,
-  };
+    // 4️⃣ Ambil semua paket di batch pesawat ini
+    const packagesInBatch = await trx("batch_packages as bp")
+      .join("packages as p", "bp.package_id", "p.id")
+      .where("bp.id_batch", batchId)
+      .select("p.berat_dipakai", "p.harga");
 
-  if (via === "Kapal" && noKarung) {
-    insertData.no_karung = noKarung;
-  }
+    const { totalWeight, totalValue } = calculateBatchDetails(packagesInBatch);
 
-  await knexInstance("batch_packages").insert(insertData);
+    // 5️⃣ Update total batch pesawat
+    const updated = await trx("batches_pesawat")
+      .where("id", batchId)
+      .update({ total_berat: totalWeight, total_value: totalValue });
 
-  // Tambah status paket
-  // (Hanya jalankan setelah transaksi utama selesai)
-  if (!trx) {
+    if (!updated) {
+      throw new Error(`Batch pesawat dengan ID ${batchId} tidak ditemukan`);
+    }
+
+    // tandai bahwa setelah commit, status perlu ditambahkan
+    shouldAddStatus = true;
+  });
+
+  // 6️⃣ Jalankan setelah transaksi selesai (di luar trx)
+  if (shouldAddStatus && packageId) {
     await statusService.addStatus(packageId, 2, batchId);
-  }
-
-  // Ambil semua paket di batch ini untuk hitung ulang total
-  const packagesInBatch = await knexInstance("batch_packages as bp")
-    .join("packages as p", "bp.package_id", "p.id")
-    .where("bp.id_batch", batchId)
-    .select("p.berat_dipakai", "p.harga");
-
-  const { totalWeight, totalValue } = calculateBatchDetails(packagesInBatch);
-
-  // Update total di batch masing-masing via
-  if (via === "Kapal") {
-    await knexInstance("batches_kapal")
-      .where("id", batchId)
-      .update({ total_berat: totalWeight, total_value: totalValue });
-  } else if (via === "Pesawat") {
-    await knexInstance("batches_pesawat")
-      .where("id", batchId)
-      .update({ total_berat: totalWeight, total_value: totalValue });
   }
 
   return {
     success: true,
-    message: `Paket ${resi} berhasil ditambahkan ke batch`,
-    totalWeight,
-    totalValue,
+    message: `Paket ${resi} berhasil ditambahkan ke batch pesawat`,
   };
 }
 
