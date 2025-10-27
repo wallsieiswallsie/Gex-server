@@ -4,27 +4,49 @@ const NotFoundError = require("../exceptions/NotFoundError");
 const { calculatePackageDetails } = require("../utils/calculations");
 const StatusService = require("./StatusService");
 const service = new StatusService();
-const { uploadToGCS } = require("./StorageService");
+const { Storage } = require('@google-cloud/storage');
+require('dotenv').config();
+
+// Setup GCS
+const credentials = JSON.parse(process.env.GCLOUD_CREDENTIALS);
+const storage = new Storage({
+  projectId: process.env.GCLOUD_PROJECT_ID,
+  credentials,
+});
+const bucket = storage.bucket(process.env.GCS_BUCKET_NAME);
+
+async function uploadToGCS(buffer, filename, mimetype) {
+  return new Promise((resolve, reject) => {
+    const blob = bucket.file(filename);
+    const blobStream = blob.createWriteStream({
+      resumable: false,
+      metadata: { contentType: mimetype },
+    });
+
+    blobStream.on('error', (err) => reject(err));
+    blobStream.on('finish', async () => {
+      try {
+        await blob.makePublic(); // agar bisa diakses publik
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+        resolve(publicUrl);
+      } catch (err) {
+        reject(err);
+      }
+    });
+
+    blobStream.end(buffer);
+  });
+}
 
 class PackageServices {
   async createPackage(data) {
+    const trx = await db.transaction(); // pakai transaction agar aman
+
     try {
       const details = calculatePackageDetails(data);
 
-      // 🔹 Cek apakah payload punya file foto
-      let photoUrl = null;
-      const file = data.photo;
-      if (file && file.hapi && file._data) {
-        console.log("📸 File detected:", file.hapi.filename); // log sebelum upload
-        photoUrl = await uploadToGCS({
-          originalname: file.hapi.filename,
-          buffer: file._data,
-          mimetype: file.hapi.headers["content-type"],
-        });
-        console.log("✅ File uploaded URL:", photoUrl); // log sesudah upload
-      }
-
-      const [newPackage] = await db("packages")
+      // 1. Insert record baru tanpa photo dulu
+      const [newPackage] = await trx("packages")
         .insert({
           nama: data.nama || "",
           resi: data.resi || "",
@@ -39,17 +61,36 @@ class PackageServices {
           invoiced: false,
           created_at: new Date(),
           updated_at: new Date(),
-          photo_url: photoUrl, // 🔹 tambahkan kolom foto
+          photo_url: null, // sementara null
         })
         .returning("*");
 
-      await service.addStatus(newPackage.id, 1);
-      await this.addActivePackages({ packageId: newPackage.id });
+      // 2. Upload foto jika ada
+      let photoUrl = null;
+      const file = data.photo;
+      if (file && file.hapi && file._data) {
+        const uniqueFilename = `${newPackage.id}-${Date.now()}-${file.hapi.filename}`;
+        photoUrl = await uploadToGCS(file._data, uniqueFilename, file.hapi.headers['content-type']);
+      }
+
+      // 3. Update record dengan URL foto
+      if (photoUrl) {
+        await trx("packages").where({ id: newPackage.id }).update({ photo_url: photoUrl });
+        newPackage.photo_url = photoUrl; // update object untuk response
+      }
+
+      // 4. Tambah status & active_packages
+      await service.addStatus(newPackage.id, 1, null, trx);
+      await this.addActivePackages({ packageId: newPackage.id }, trx);
+
+      // 5. Commit transaction
+      await trx.commit();
 
       return newPackage;
 
     } catch (err) {
-      console.error("Error inserting package:", err);
+      await trx.rollback();
+      console.error("Error createPackage:", err);
       throw err;
     }
   }
