@@ -1,7 +1,6 @@
 const { 
   createBatchKapalHandler,
   createBatchPesawatHandler,
-  addPackageToKapalHandler,
   getAllBatchesKapalHandler,
   addPackageToPesawatHandler,
   getAllBatchesPesawatHandler,
@@ -23,11 +22,6 @@ const batchRoutes = [
     method: "POST",
     path: "/batches/pesawat",
     handler: createBatchPesawatHandler,
-  },
-  {
-    method: "POST",
-    path: "/batches/kapal/{batchId}/packages",
-    handler: addPackageToKapalHandler,
   },
   {
     method: "POST",

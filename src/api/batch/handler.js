@@ -259,7 +259,6 @@ const getPackagesByKarungHandler = async (request, h) => {
 module.exports = { 
   createBatchKapalHandler,
   createBatchPesawatHandler,
-  addPackageToKapalHandler,
   addPackageToPesawatHandler,
   getAllBatchesKapalHandler,
   getAllBatchesPesawatHandler,
