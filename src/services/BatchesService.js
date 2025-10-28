@@ -51,22 +51,47 @@ async function addPackageToBatch(batchId, resi, via = "Pesawat") {
   let packageId = null;
 
   await db.transaction(async (trx) => {
+    // 🔹 Cek apakah paket dengan resi tersebut ada
     const pkg = await trx("packages").where({ resi }).first();
     if (!pkg) throw new NotFoundError(`Paket ${resi} tidak ditemukan`);
     packageId = pkg.id;
 
-    const exists = await trx("batch_packages")
-      .where({ id_batch: batchId, package_id: pkg.id })
+    // 🔹 Cek apakah paket sudah ada di batch manapun
+    const existingBatch = await trx("batch_packages")
+      .where({ package_id: pkg.id })
       .first();
-    if (exists)
-      throw new InvariantError(`Paket ${resi} sudah ada di batch ini`);
 
+    if (existingBatch) {
+      if (existingBatch.id_batch === batchId) {
+        // Jika paket sudah ada di batch ini -> tolak
+        throw new InvariantError(`Paket ${resi} sudah ada di batch ini`);
+      } else {
+        // Jika paket ada di batch lain -> hapus dari batch lama
+        await trx("batch_packages")
+          .where({ package_id: pkg.id })
+          .delete();
+
+        // Opsional: update total berat & nilai di batch lama
+        const oldPackages = await trx("batch_packages as bp")
+          .join("packages as p", "bp.package_id", "p.id")
+          .where("bp.id_batch", existingBatch.id_batch)
+          .select("p.berat_dipakai", "p.harga");
+
+        const { totalWeight: oldWeight, totalValue: oldValue } = calculateBatchDetails(oldPackages);
+        await trx("batches_pesawat")
+          .where("id", existingBatch.id_batch)
+          .update({ total_berat: oldWeight, total_value: oldValue });
+      }
+    }
+
+    // 🔹 Tambahkan paket ke batch baru
     await trx("batch_packages").insert({
       id_batch: batchId,
       package_id: pkg.id,
       via,
     });
 
+    // 🔹 Hitung ulang total berat & nilai di batch ini
     const packagesInBatch = await trx("batch_packages as bp")
       .join("packages as p", "bp.package_id", "p.id")
       .where("bp.id_batch", batchId)
@@ -78,10 +103,14 @@ async function addPackageToBatch(batchId, resi, via = "Pesawat") {
       .update({ total_berat: totalWeight, total_value: totalValue });
   });
 
+  // 🔹 Tambahkan status paket ke status 2 (masuk batch pesawat)
   await statusService.addStatus(packageId, 2, batchId);
-  return { success: true, message: `Paket ${resi} berhasil ditambahkan ke batch pesawat` };
-}
 
+  return {
+    success: true,
+    message: `Paket ${resi} berhasil dipindahkan atau ditambahkan ke batch pesawat.`,
+  };
+}
 
 // ─────────────────────────────
 // 🔹 Tambah karung ke batch kapal
