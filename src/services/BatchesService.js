@@ -311,7 +311,8 @@ async function getBatchKapalWithPackages(batchId) {
   const packages = await db("batch_packages as bp")
     .join("packages as p", "bp.package_id", "p.id")
     .where("bp.id_batch", batchId)
-    .select("p.id as package_id", "p.nama", "p.resi", "p.berat_dipakai", "p.harga");
+    .select("p.id as package_id", "p.nama", "p.resi", "p.berat_dipakai", "p.harga")
+    .orderBy("bp.created_at", "desc");
 
   return { ...batch, packages };
 }
@@ -323,7 +324,8 @@ async function getBatchPesawatWithPackages(batchId) {
   const packages = await db("batch_packages as bp")
     .join("packages as p", "bp.package_id", "p.id")
     .where("bp.id_batch", batchId)
-    .select("p.id as package_id", "p.nama", "p.resi", "p.berat_dipakai", "p.harga");
+    .select("p.id as package_id", "p.nama", "p.resi", "p.berat_dipakai", "p.harga")
+    .orderBy("bp.created_at", "desc");
 
   return { ...batch, packages };
 }
