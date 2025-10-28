@@ -312,7 +312,6 @@ async function getBatchKapalWithPackages(batchId) {
     .join("packages as p", "bp.package_id", "p.id")
     .where("bp.id_batch", batchId)
     .select("p.id as package_id", "p.nama", "p.resi", "p.berat_dipakai", "p.harga")
-    .orderBy("bp.created_at", "desc");
 
   return { ...batch, packages };
 }
@@ -325,7 +324,6 @@ async function getBatchPesawatWithPackages(batchId) {
     .join("packages as p", "bp.package_id", "p.id")
     .where("bp.id_batch", batchId)
     .select("p.id as package_id", "p.nama", "p.resi", "p.berat_dipakai", "p.harga")
-    .orderBy("bp.created_at", "desc");
 
   return { ...batch, packages };
 }
