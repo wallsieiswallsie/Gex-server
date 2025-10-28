@@ -72,30 +72,6 @@ async function createBatchPesawatHandler(request, h) {
   }
 }
 
-async function addPackageToKapalHandler(req, h) {
-  try {
-    const { batchId } = req.params;
-    const { resi } = req.payload;
-
-    // Ambil paket berdasarkan resi dulu
-    const packageData = await db("packages").where({ resi }).first();
-    if (!packageData) {
-      throw new Error(`Paket dengan resi ${resi} tidak ditemukan`);
-    }
-
-    // Cek via paket
-    if (packageData.via === "Pesawat") {
-      throw new Error("INI PAKET PESAWAT!");
-    }
-
-    const result = await addPackageToBatch(batchId, resi, "Kapal");
-    return h.response(result).code(201);
-  } catch (err) {
-    console.error("Error addPackageToKapalHandler:", err);
-    return h.response({ success: false, message: err.message }).code(400);
-  }
-}
-
 async function addPackageToPesawatHandler(req, h) {
   try {
     const { batchId } = req.params;
@@ -115,7 +91,7 @@ async function addPackageToPesawatHandler(req, h) {
     const result = await addPackageToBatch(batchId, resi, "Pesawat");
     return h.response(result).code(201);
   } catch (err) {
-    console.error("Error addPackageToKapalHandler:", err);
+    console.error("Error addPackageToPesawatHandler:", err);
     return h.response({ success: false, message: err.message }).code(400);
   }
 }
