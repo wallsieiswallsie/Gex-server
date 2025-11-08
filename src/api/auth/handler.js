@@ -7,7 +7,6 @@ const registerHandler = async (request, h) => {
   try {
     const { name, email, password, role, cabang } = request.payload;
 
-    // ✅ Validasi sederhana
     if (!cabang) {
       return h.response({ error: "Cabang wajib dipilih" }).code(400);
     }
