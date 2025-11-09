@@ -1,6 +1,6 @@
-const knex = require('../db');
-const { Storage } = require('@google-cloud/storage');
-require('dotenv').config();
+const knex = require("../db");
+const { Storage } = require("@google-cloud/storage");
+require("dotenv").config();
 
 // =================== GCS CONFIG ===================
 const credentials = JSON.parse(process.env.GCLOUD_CREDENTIALS);
@@ -11,137 +11,69 @@ const storage = new Storage({
 const bucket = storage.bucket(process.env.GCS_TUTORIAL_BUCKET);
 
 async function uploadToGCS(buffer, filename, mimetype) {
-  if (!buffer || buffer.length === 0) throw new Error('File buffer kosong');
-
+  if (!buffer || buffer.length === 0) throw new Error("File buffer kosong");
   const blob = bucket.file(filename);
   await blob.save(buffer, {
-    contentType: mimetype || 'application/octet-stream',
+    contentType: mimetype || "application/octet-stream",
     resumable: false,
-    metadata: { uploadedBy: 'service' },
+    metadata: { uploadedBy: "service" },
   });
-
   const [signedUrl] = await blob.getSignedUrl({
-    action: 'read',
+    action: "read",
     expires: Date.now() + 24 * 60 * 60 * 1000,
   });
-
   return signedUrl;
 }
 
-// =================== SYARAT KETENTUAN ===================
-class SyaratKetentuanService {
-  constructor() { this.table = 'syarat_ketentuan'; }
-  async getAll() { return knex(this.table).select('*'); }
-  async getById(id) { 
-    const row = await knex(this.table).where({ id }).first();
-    if (!row) throw new Error('SyaratKetentuan tidak ditemukan');
-    return row;
-  }
-  async create(data) { const [newRow] = await knex(this.table).insert(data).returning('*'); return newRow; }
-  async update(id, data) { 
-    const [updated] = await knex(this.table).where({ id }).update(data).returning('*');
-    if (!updated) throw new Error('SyaratKetentuan tidak ditemukan'); 
-    return updated; 
-  }
-}
+// =================== BASE SERVICE ===================
+class BaseService {
+  constructor(table) { this.table = table; }
 
-// =================== JADWAL KIRIM ===================
-class JadwalKirimService {
-  constructor() { this.table = 'jadwal_kirim'; }
-  async getAll() { return knex(this.table).select('*'); }
-  async getById(id) { 
+  async getAll() { return knex(this.table).select("*"); }
+  async getById(id) {
     const row = await knex(this.table).where({ id }).first();
-    if (!row) throw new Error('JadwalKirim tidak ditemukan');
-    return row;
-  }
-  async create(data) { const [newRow] = await knex(this.table).insert(data).returning('*'); return newRow; }
-  async update(id, data) { 
-    const [updated] = await knex(this.table).where({ id }).update(data).returning('*');
-    if (!updated) throw new Error('JadwalKirim tidak ditemukan'); 
-    return updated; 
-  }
-}
-
-// =================== LOKASI KONTAK ===================
-class LokasiKontakService {
-  constructor() { this.table = 'lokasi_kontak'; }
-  async getAll() { return knex(this.table).select('*'); }
-  async getById(id) { 
-    const row = await knex(this.table).where({ id }).first();
-    if (!row) throw new Error('LokasiKontak tidak ditemukan');
-    return row;
-  }
-  async create(data) { const [newRow] = await knex(this.table).insert(data).returning('*'); return newRow; }
-  async update(id, data) { 
-    const [updated] = await knex(this.table).where({ id }).update(data).returning('*');
-    if (!updated) throw new Error('LokasiKontak tidak ditemukan'); 
-    return updated; 
-  }
-}
-
-// =================== CARA KIRIM ===================
-class CaraKirimService {
-  constructor() { this.table = 'cara_kirim'; }
-  async getAll() { return knex(this.table).select('*'); }
-  async getById(id) { 
-    const row = await knex(this.table).where({ id }).first();
-    if (!row) throw new Error('CaraKirim tidak ditemukan');
+    if (!row) throw new Error(`${this.table} tidak ditemukan`);
     return row;
   }
   async create(data) {
-    if (data.photo) {
-      const filename = `${Date.now()}-${data.photo.name || 'file'}`;
-      data.photo_url = await uploadToGCS(data.photo._data || data.photo, filename, data.photo.type);
-    }
-    const [newRow] = await knex(this.table).insert(data).returning('*');
+    const [newRow] = await knex(this.table).insert(data).returning("*");
     return newRow;
   }
-  async update(id, data) {
-    if (data.photo) {
-      const filename = `${id}-${Date.now()}-${data.photo.name || 'file'}`;
-      data.photo_url = await uploadToGCS(data.photo._data || data.photo, filename, data.photo.type);
-    }
-    const [updated] = await knex(this.table).where({ id }).update(data).returning('*');
-    if (!updated) throw new Error('CaraKirim tidak ditemukan');
+  async patch(id, data) {
+    const [updated] = await knex(this.table).where({ id }).update(data).returning("*");
+    if (!updated) throw new Error(`${this.table} tidak ditemukan`);
     return updated;
   }
 }
 
-// =================== DAFTAR ONGKIR ===================
-class DaftarOngkirService {
-  constructor() { this.table = 'daftar_ongkir'; }
-  async getAll() { return knex(this.table).select('*'); }
-  async getById(id) { 
-    const row = await knex(this.table).where({ id }).first();
-    if (!row) throw new Error('DaftarOngkir tidak ditemukan');
-    return row;
+// =================== CUSTOMER SERVICES ===================
+class SyaratKetentuanService extends BaseService { constructor() { super("syarat_ketentuan"); } }
+class JadwalKirimService extends BaseService { constructor() { super("jadwal_kirim"); } }
+class LokasiKontakService extends BaseService { constructor() { super("lokasi_kontak"); } }
+
+class CaraKirimService extends BaseService {
+  constructor() { super("cara_kirim"); }
+
+  async create(data) {
+    if (data.photo) {
+      const filename = `${Date.now()}-${data.photo.name || "file"}`;
+      data.photo_url = await uploadToGCS(data.photo._data || data.photo, filename, data.photo.type);
+    }
+    return super.create(data);
   }
-  async create(data) { const [newRow] = await knex(this.table).insert(data).returning('*'); return newRow; }
-  async update(id, data) { 
-    const [updated] = await knex(this.table).where({ id }).update(data).returning('*');
-    if (!updated) throw new Error('DaftarOngkir tidak ditemukan'); 
-    return updated; 
+
+  async patch(id, data) {
+    if (data.photo) {
+      const filename = `${id}-${Date.now()}-${data.photo.name || "file"}`;
+      data.photo_url = await uploadToGCS(data.photo._data || data.photo, filename, data.photo.type);
+    }
+    return super.patch(id, data);
   }
 }
 
-// =================== SERING DITANYAKAN ===================
-class SeringDitanyakanService {
-  constructor() { this.table = 'sering_ditanyakan'; }
-  async getAll() { return knex(this.table).select('*'); }
-  async getById(id) { 
-    const row = await knex(this.table).where({ id }).first();
-    if (!row) throw new Error('SeringDitanyakan tidak ditemukan');
-    return row;
-  }
-  async create(data) { const [newRow] = await knex(this.table).insert(data).returning('*'); return newRow; }
-  async update(id, data) { 
-    const [updated] = await knex(this.table).where({ id }).update(data).returning('*');
-    if (!updated) throw new Error('SeringDitanyakan tidak ditemukan'); 
-    return updated; 
-  }
-}
+class DaftarOngkirService extends BaseService { constructor() { super("daftar_ongkir"); } }
+class SeringDitanyakanService extends BaseService { constructor() { super("sering_ditanyakan"); } }
 
-// =================== EXPORT ===================
 module.exports = {
   SyaratKetentuanService: new SyaratKetentuanService(),
   JadwalKirimService: new JadwalKirimService(),
