@@ -44,6 +44,15 @@ function generateHandlers(service) {
         return h.response({ status: "fail", message: err.message }).code(400);
       }
     },
+    delete: async (req, h) => {
+      try {
+        const { id } = req.params;
+        const data = await service.delete(id);
+        return h.response({ status: "success", data }).code(200);
+      } catch (err) {
+        return h.response({ status: "fail", message: err.message }).code(400);
+      }
+    },
   };
 }
 
