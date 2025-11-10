@@ -53,6 +53,8 @@ class PackageServices {
         .insert({
           nama: data.nama || "",
           resi: data.resi || "",
+          tanggal_tiba: data.tanggal_tiba || null, 
+          ekspedisi: data.ekspedisi || null,
           panjang: Number(data.panjang) || 0,
           lebar: Number(data.lebar) || 0,
           tinggi: Number(data.tinggi) || 0,
@@ -65,6 +67,7 @@ class PackageServices {
           created_at: new Date(),
           updated_at: new Date(),
           photo_url: null,
+          
         })
         .returning("*");
 
