@@ -43,7 +43,7 @@ class AuthenticationService {
     const refreshToken = jwt.sign(
       { id: user.id },
       REFRESH_TOKEN_KEY,
-      { expiresIn: "30d" }
+      { expiresIn: "90d" }
     );
 
     return {
