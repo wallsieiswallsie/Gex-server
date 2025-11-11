@@ -386,6 +386,81 @@ async function getPackagesByKarung(batchId, noKarung, searchQuery = "") {
 }
 
 // ─────────────────────────────
+// 🔹 Pindahkan / Set ulang paket ke karung tertentu
+// ─────────────────────────────
+async function movePackageToKarung(batchId, resi, noKarungBaru) {
+  let paketId = null;
+
+  await db.transaction(async (trx) => {
+    // ✅ Cek paket
+    const paket = await trx("packages").where({ resi }).first();
+    if (!paket) throw new NotFoundError("Paket tidak ditemukan");
+    paketId = paket.id;
+
+    // ✅ Cek karung baru valid
+    const karungBaru = await trx("karung")
+      .where({ id_batch: batchId, no_karung: noKarungBaru })
+      .first();
+    if (!karungBaru) throw new NotFoundError("Karung tujuan tidak ditemukan di batch ini");
+
+    // ✅ Cek apakah paket sudah ada di karung manapun
+    const karungLama = await trx("package_karung")
+      .where({ package_id: paket.id })
+      .first();
+
+    // ✅ Jika paket ada di karung lama → hapus dulu
+    if (karungLama) {
+      await trx("package_karung")
+        .where({ package_id: paket.id })
+        .delete();
+    }
+
+    // ✅ Insert ke karung baru
+    await trx("package_karung").insert({
+      karung_id: karungBaru.id,
+      package_id: paket.id,
+    });
+
+    // ✅ Pastikan paket tercatat di batch_packages juga
+    const existsInBatch = await trx("batch_packages")
+      .where({ id_batch: batchId, package_id: paket.id })
+      .first();
+
+    if (!existsInBatch) {
+      await trx("batch_packages").insert({
+        id_batch: batchId,
+        package_id: paket.id,
+        via: "Kapal",
+        no_karung: noKarungBaru,
+      });
+    } else {
+      await trx("batch_packages")
+        .where({ id_batch: batchId, package_id: paket.id })
+        .update({ no_karung: noKarungBaru });
+    }
+
+    // ✅ Update total batch
+    const packagesInBatch = await trx("batch_packages as bp")
+      .join("packages as p", "bp.package_id", "p.id")
+      .where("bp.id_batch", batchId)
+      .select("p.berat_dipakai", "p.harga");
+
+    const { totalWeight, totalValue } = calculateBatchDetails(packagesInBatch);
+    await trx("batches_kapal")
+      .where("id", batchId)
+      .update({ total_berat: totalWeight, total_value: totalValue });
+  });
+
+  // ✅ Tambahkan status (setelah commit)
+  await statusService.addStatus(paketId, 2, batchId);
+
+  return {
+    success: true,
+    message: `Paket ${resi} berhasil dipindahkan ke karung ${noKarungBaru}`,
+  };
+}
+
+// ─────────────────────────────
 // 🔹 Export
 // ─────────────────────────────
 module.exports = {
@@ -401,4 +476,5 @@ module.exports = {
   getBatchPesawatWithPackages,
   getBatchWithKarung,
   getPackagesByKarung,
+  movePackageToKarung,
 };

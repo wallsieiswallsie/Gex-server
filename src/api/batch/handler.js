@@ -11,6 +11,7 @@ const {
   addKarungToBatch,
   getBatchWithKarung,
   getPackagesByKarung,
+  movePackageToKarung,
 } = require("../../services/BatchesService");
 
 const NotFoundError = require("../../exceptions/NotFoundError");
@@ -256,6 +257,36 @@ const getPackagesByKarungHandler = async (request, h) => {
   }
 };
 
+const movePackageToKarungHandler = async (request, h) => {
+  try {
+    const { batchId } = request.params;
+    const { resi, noKarungBaru } = request.payload;
+
+    const result = await movePackageToKarung(batchId, resi, noKarungBaru);
+
+    return h.response({
+      status: "success",
+      message: result.message,
+      data: result,
+    }).code(200);
+  } catch (err) {
+    console.error("Error movePackageToKarungHandler:", err);
+
+    if (err.name === "NotFoundError" || err.name === "InvariantError") {
+      return h.response({
+        status: "fail",
+        message: err.message,
+      }).code(400);
+    }
+
+    return h.response({
+      status: "error",
+      message: "Gagal memindahkan paket ke karung baru",
+      detail: err.message,
+    }).code(500);
+  }
+};
+
 module.exports = { 
   createBatchKapalHandler,
   createBatchPesawatHandler,
@@ -268,4 +299,5 @@ module.exports = {
   addKarungToBatchHandler,
   getBatchWithKarungHandler,
   getPackagesByKarungHandler,
+  movePackageToKarungHandler,
 };

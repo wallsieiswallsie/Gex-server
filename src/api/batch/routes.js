@@ -10,6 +10,7 @@ const {
   addKarungToBatchHandler,
   getBatchWithKarungHandler,
   getPackagesByKarungHandler,
+  movePackageToKarungHandler,
 } = require("./handler");
 
 const batchRoutes = [
@@ -67,7 +68,12 @@ const batchRoutes = [
     method: "GET",
     path: "/batches/kapal/{batchId}/karung/{noKarung}/packages",
     handler: getPackagesByKarungHandler,
-  }
+  },
+  {
+    method: "POST",
+    path: "/batches/kapal/{batchId}/karung/move-package",
+    handler: movePackageToKarungHandler,
+  },
 
 ];
 
