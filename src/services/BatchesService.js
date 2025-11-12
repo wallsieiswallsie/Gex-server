@@ -324,7 +324,11 @@ async function getBatchKapalWithPackages(batchId) {
         "p.berat_dipakai",
         "p.harga",
         "p.invoiced",
-        "p.tanggal_tiba"
+        "p.tanggal_tiba",
+        "p.kode",
+        "p.panjang",
+        "p.lebar",
+        "p.tinggi"
       );
 
     // Gabungkan hasil
