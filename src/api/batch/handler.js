@@ -120,14 +120,35 @@ async function getAllBatchesPesawatHandler(request, h) {
 async function getAllBatchesKapalWithPackagesHandler(request, h) {
   try {
     const { batchId } = request.params;
+
     const batch = await getBatchKapalWithPackages(batchId);
+
     if (!batch) {
-      return h.response({ success: false, message: "Batch tidak ditemukan" }).code(404);
+      return h
+        .response({
+          success: false,
+          message: "Batch tidak ditemukan",
+        })
+        .code(404);
     }
-    return h.response({ success: true, data: batch }).code(200);
+
+    return h
+      .response({
+        success: true,
+        data: batch,
+      })
+      .code(200);
+
   } catch (err) {
-    console.error(err);
-    return h.response({ success: false, message: err.message }).code(400);
+    console.error("Error getAllBatchesKapalWithPackages:", err);
+
+    return h
+      .response({
+        success: false,
+        message: "Terjadi kesalahan pada server",
+        error: err.message,
+      })
+      .code(500);
   }
 }
 

@@ -305,15 +305,31 @@ async function getAllBatchesPesawat() {
 }
 
 async function getBatchKapalWithPackages(batchId) {
-  const batch = await db("batches_kapal").where("id", batchId).first();
-  if (!batch) return null;
+  return await db.transaction(async (trx) => {
+    // Ambil batch kapal
+    const batch = await trx("batches_kapal")
+      .where("id", batchId)
+      .first();
 
-  const packages = await db("batch_packages as bp")
-    .join("packages as p", "bp.package_id", "p.id")
-    .where("bp.id_batch", batchId)
-    .select("p.id as package_id", "p.nama", "p.resi", "p.berat_dipakai", "p.harga")
+    if (!batch) return null;
 
-  return { ...batch, packages };
+    // Ambil semua package yang terkait batch
+    const packages = await trx("batch_packages as bp")
+      .join("packages as p", "bp.package_id", "p.id")
+      .where("bp.id_batch", batchId)
+      .select(
+        "p.id as package_id",
+        "p.nama",
+        "p.resi",
+        "p.berat_dipakai",
+        "p.harga",
+        "p.invoiced",
+        "p.tanggal_tiba"
+      );
+
+    // Gabungkan hasil
+    return { ...batch, packages };
+  });
 }
 
 async function getBatchPesawatWithPackages(batchId) {
