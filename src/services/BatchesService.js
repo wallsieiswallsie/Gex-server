@@ -344,7 +344,20 @@ async function getBatchPesawatWithPackages(batchId) {
   const packages = await db("batch_packages as bp")
     .join("packages as p", "bp.package_id", "p.id")
     .where("bp.id_batch", batchId)
-    .select("p.id as package_id", "p.nama", "p.resi", "p.berat_dipakai", "p.harga")
+    .select(
+        "p.id as package_id",
+        "p.nama",
+        "p.resi",
+        "p.ekspedisi",
+        "p.berat_dipakai",
+        "p.harga",
+        "p.invoiced",
+        "p.tanggal_tiba",
+        "p.kode",
+        "p.panjang",
+        "p.lebar",
+        "p.tinggi"
+      );
 
   return { ...batch, packages };
 }
