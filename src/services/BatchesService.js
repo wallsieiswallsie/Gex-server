@@ -321,6 +321,7 @@ async function getBatchKapalWithPackages(batchId) {
         "p.id as package_id",
         "p.nama",
         "p.resi",
+        "p.ekspedisi",
         "p.berat_dipakai",
         "p.harga",
         "p.invoiced",
