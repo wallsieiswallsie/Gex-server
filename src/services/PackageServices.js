@@ -73,7 +73,7 @@ class PackageServices {
       // Upload foto jika ada
       if (data.photo) {
         const uniqueFilename = `${newPackage.id}-${Date.now()}-${data.photo.name || "file"}`;
-        const signedUrl = await uploadToGCS(
+        const publicUrl = await uploadToGCS(
           data.photo._data || data.photo,
           uniqueFilename,
           data.photo.type || "image/jpeg"
@@ -81,9 +81,9 @@ class PackageServices {
 
         await trx("packages")
           .where({ id: newPackage.id })
-          .update({ photo_url: signedUrl });
+          .update({ photo_url: publicUrl });
 
-        newPackage.photo_url = signedUrl;
+        newPackage.photo_url = publicUrl;
       }
 
       // Tambah status & active_packages
