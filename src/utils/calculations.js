@@ -13,6 +13,7 @@ const calculatePackageDetails = (pkg) => {
   const getVia = (kode) => {
     if (kode === "JKSOQA" || kode === "JKSOQB") return "Kapal";
     if (kode === "JPSOQA" || kode === "JPSOQB") return "Pesawat";
+    if (kode === "Bermasalah" || kode === "JPSOQB") return "Bermasalah";
     return null; // kalau kode invalid
   };
 
@@ -22,6 +23,7 @@ const calculatePackageDetails = (pkg) => {
   let weightUsed = actualWeight;
   if (via === "Kapal") weightUsed = Math.max(volumeWeightKapal, actualWeight);
   if (via === "Pesawat") weightUsed = Math.max(volumeWeightPesawat, actualWeight);
+  if (via === "Bermasalah") weightUsed = 0;
 
   // Hitung harga
   let price = 0;
