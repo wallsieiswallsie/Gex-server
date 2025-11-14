@@ -22,23 +22,22 @@ async function uploadToGCS(buffer, filename, mimetype) {
   console.log(`[GCS] Start uploading file: ${filename}, size: ${buffer.length} bytes`);
 
   const blob = bucket.file(filename);
+
   await blob.save(buffer, {
     contentType: mimetype || "application/octet-stream",
     resumable: false,
+    public: true,
     metadata: {
       // metadata optional
       uploadedBy: "package-service",
     },
   });
 
-  // generate signed URL 24 jam
-  const [signedUrl] = await blob.getSignedUrl({
-    action: "read",
-    expires: Date.now() + 24 * 60 * 60 * 1000,
-  });
+  // Public URL permanen
+  const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
 
-  console.log("[GCS] File signed URL:", signedUrl);
-  return signedUrl;
+  console.log("[GCS] Public URL:", publicUrl);
+  return publicUrl;
 }
 
 class PackageServices {
