@@ -26,7 +26,6 @@ async function uploadToGCS(buffer, filename, mimetype) {
   await blob.save(buffer, {
     contentType: mimetype || "application/octet-stream",
     resumable: false,
-    public: true,
     metadata: {
       // metadata optional
       uploadedBy: "package-service",
