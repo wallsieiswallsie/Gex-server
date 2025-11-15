@@ -33,6 +33,9 @@ const calculatePackageDetails = (pkg) => {
   }
 
   if (via === "Pesawat") {
+
+    weightUsed = Number(weightUsed.toFixed(2));
+    
     if (weightUsed < 0.8) {
       const roundedWeight = Math.ceil(weightUsed / 0.05) * 0.5;
       price = roundedWeight * 10000;
