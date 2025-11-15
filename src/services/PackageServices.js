@@ -339,18 +339,17 @@ class PackageServices {
 
   async confirmPackageService({ resi, kode, nama }) {
     return await db.transaction(async (t) => {
-      // 1. Cari paket berdasarkan nilai resi (client)
+      
+      // 1. Cari paket berdasarkan RESI
       const paket = await t("packages").where({ resi }).first();
 
       if (!paket) {
         throw new NotFoundError("Resi tidak ditemukan di database.");
       }
 
-      // 2. Jika kode pada paket != "Bermasalah"
+      // 2. Validasi bahwa paket memang status Bermasalah
       if (paket.kode !== "Bermasalah") {
-        throw new InvariantError(
-          "Paket tidak ada dalam daftar paket bermasalah."
-        );
+        throw new InvariantError("Paket tidak ada dalam daftar paket bermasalah.");
       }
 
       // 3. Tentukan VIA berdasarkan kode baru dari client
@@ -360,19 +359,33 @@ class PackageServices {
         viaUpdate = "Kapal";
       } else if (kode === "JPSOQA" || kode === "JPSOQB") {
         viaUpdate = "Pesawat";
+      } else if (kode === "Bermasalah") {
+        viaUpdate = "Bermasalah";
       }
 
-      // 4. Update data pada tabel packages
+      // 4. Kalkulasi berat_dipakai & harga
+      const calculated = calculatePackageDetails({
+        ...paket,
+        kode: kode, // kode baru dari client
+      });
+
+      const { weightUsed, price } = calculated;
+
+      // 5. Update tabel packages
       await t("packages")
         .where({ id: paket.id })
         .update({
           kode,
           via: viaUpdate,
           nama,
+
+          berat_dipakai: weightUsed,
+          harga: price,
+
           updated_at: new Date(),
         });
 
-      // 5. Tambahkan record ke confirmed_packages
+      // 6. Tambah ke confirmed_packages
       await t("confirmed_packages")
         .insert({
           package_id: paket.id,
@@ -382,10 +395,15 @@ class PackageServices {
       return {
         success: true,
         message: "Paket telah berhasil dikonfirmasi.",
+        detail: {
+          weightUsed,
+          price,
+          via: viaUpdate,
+        },
       };
     });
   }
 
-};
+  };
 
 module.exports = PackageServices;
