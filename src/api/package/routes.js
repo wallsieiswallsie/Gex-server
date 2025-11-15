@@ -7,6 +7,7 @@ const {
   addArchivePackagesHandler,
   confirmPackageHandler,
   getUnmovedConfirmedPackagesHandler,
+  markPackageMovedHandler,
 } = require("./handler");
 
 const packageRoutes = [
@@ -57,6 +58,11 @@ const packageRoutes = [
     method: "GET",
     path: "/packages/confirm-unmoved",
     handler: getUnmovedConfirmedPackagesHandler,
+  },
+  {
+    method: "POST",
+    path: "/packages/move",
+    handler: markPackageMovedHandler,
   },
 
 ];

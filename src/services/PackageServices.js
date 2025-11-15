@@ -429,6 +429,46 @@ class PackageServices {
     }
   }
 
+  async markConfirmedPackageAsMovedService({ resi }) {
+    return await db.transaction(async (trx) => {
+
+      // 1. Cari paket berdasarkan kolom resi
+      const paket = await trx("packages")
+        .select("id", "resi")
+        .where({ resi })
+        .first();
+
+      if (!paket) {
+        throw new InvariantError("Paket dengan resi tersebut tidak ditemukan.");
+      }
+
+      const packageId = paket.id;
+
+      // 2. Cari record di confirmed_packages berdasarkan package_id
+      const confirmed = await trx("confirmed_packages")
+        .select("id")
+        .where({ package_id: packageId })
+        .first();
+
+      if (!confirmed) {
+        throw new InvariantError("Paket belum pernah dikonfirmasi.");
+      }
+
+      // 3. Update is_moved menjadi true
+      await trx("confirmed_packages")
+        .where({ package_id: packageId })
+        .update({
+          is_moved: true,
+        });
+
+      return {
+        success: true,
+        message: "Paket berhasil ditandai sebagai sudah dipindahkan.",
+        package_id: packageId,
+      };
+    });
+  }
+
 };
 
 module.exports = PackageServices;

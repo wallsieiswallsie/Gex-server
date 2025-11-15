@@ -156,6 +156,32 @@ const getUnmovedConfirmedPackagesHandler = async (request, h) => {
   }
 };
 
+const markPackageMovedHandler = async (request, h) => {
+  try {
+    const { resi } = request.payload;
+
+    const result = await service.markConfirmedPackageAsMovedService({ resi });
+
+    return h.response({
+      status: "success",
+      message: result.message,
+      data: {
+        package_id: result.package_id,
+      },
+    }).code(200);
+
+  } catch (err) {
+    console.error("Error markPackageMovedHandler:", err);
+
+    if (err instanceof InvariantError || err instanceof NotFoundError) {
+      throw err;
+    }
+
+    throw new ServerError("Gagal menandai paket sebagai sudah dipindahkan");
+  }
+};
+
+
 module.exports = {
   createPackageHandler,
   addActivePackagesHandler,
@@ -165,4 +191,5 @@ module.exports = {
   removeActivePackageByIdHandler,
   confirmPackageHandler,
   getUnmovedConfirmedPackagesHandler,
+  markPackageMovedHandler,
 };
