@@ -61,7 +61,7 @@ const packageRoutes = [
   },
   {
     method: "POST",
-    path: "/packages/move",
+    path: "/packages/confirm-moved",
     handler: markPackageMovedHandler,
   },
 
