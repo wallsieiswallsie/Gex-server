@@ -40,7 +40,7 @@ const calculatePackageDetails = (pkg) => {
       // tambahan logika
       price = 80000;
     } else {
-      price = Math.ceil(weightUsed/0.1) * 80000;
+      price = (Math.ceil(weightUsed/0.1)/10) * 80000;
     }
   }
 
