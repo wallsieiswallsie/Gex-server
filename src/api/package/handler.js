@@ -136,11 +136,14 @@ const confirmPackageHandler = async (request, h) => {
 
 const getUnmovedConfirmedPackagesHandler = async (request, h) => {
   try {
-    const data = await service.getUnmovedConfirmedPackagesService();
+    const result = await service.getUnmovedConfirmedPackagesService();
 
     return h.response({
       status: "success",
-      data,
+      data: {
+        count: result.count,
+        packages: result.data,
+      },
     });
   } catch (err) {
     console.error("Error getUnmovedConfirmedPackagesHandler:", err);
