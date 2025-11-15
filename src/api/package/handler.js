@@ -107,6 +107,34 @@ const removeActivePackageByIdHandler = async (request, h) => {
   }
 };
 
+const confirmPackageHandler = async (request, h) => {
+  try {
+    const { resi, kode, nama } = request.payload;
+
+    const result = await service.confirmPackageService({ resi, kode, nama });
+
+    if (!result.success) {
+      return h
+        .response({
+          status: "fail",
+          message: result.message,
+        })
+        .code(400);
+    }
+
+    return h
+      .response({
+        status: "success",
+        message: result.message,
+      })
+      .code(200);
+  } catch (err) {
+    console.error("Error confirmPackageHandler:", err);
+    throw new ServerError("Gagal mengkonfirmasi paket");
+  }
+};
+
+
 module.exports = {
   createPackageHandler,
   addActivePackagesHandler,
@@ -114,4 +142,5 @@ module.exports = {
   getAllPackagesHandler,
   getAllArchivePackagesHandler,
   removeActivePackageByIdHandler,
+  confirmPackageHandler,
 };

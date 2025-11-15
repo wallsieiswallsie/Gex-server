@@ -5,6 +5,7 @@ const {
   removeActivePackageByIdHandler,
   addActivePackagesHandler,
   addArchivePackagesHandler,
+  confirmPackageHandler,
 } = require("./handler");
 
 const packageRoutes = [
@@ -45,7 +46,13 @@ const packageRoutes = [
     method: "DELETE",
     path: "/activePackages/{packageId}",
     handler: removeActivePackageByIdHandler,
-  }
+  },
+  {
+    method: "POST",
+    path: "/packages/confirm",
+    handler: confirmPackageHandler,
+  },
+
 ];
 
 module.exports = packageRoutes;

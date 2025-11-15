@@ -337,6 +337,55 @@ class PackageServices {
     });
   }
 
+  async confirmPackageService({ resi, kode, nama }) {
+    return await db.transaction(async (t) => {
+      // 1. Cari paket berdasarkan nilai resi (client)
+      const paket = await t("packages").where({ resi }).first();
+
+      if (!paket) {
+        throw new NotFoundError("Resi tidak ditemukan di database.");
+      }
+
+      // 2. Jika kode pada paket != "Bermasalah"
+      if (paket.kode !== "Bermasalah") {
+        throw new InvariantError(
+          "Paket tidak ada dalam daftar paket bermasalah."
+        );
+      }
+
+      // 3. Tentukan VIA berdasarkan kode baru dari client
+      let viaUpdate = paket.via;
+
+      if (kode === "JKSOQA" || kode === "JKSOQB") {
+        viaUpdate = "Kapal";
+      } else if (kode === "JPSOQA" || kode === "JPSOQB") {
+        viaUpdate = "Pesawat";
+      }
+
+      // 4. Update data pada tabel packages
+      await t("packages")
+        .where({ id: paket.id })
+        .update({
+          kode,
+          via: viaUpdate,
+          nama,
+          updated_at: new Date(),
+        });
+
+      // 5. Tambahkan record ke confirmed_packages
+      await t("confirmed_packages")
+        .insert({
+          package_id: paket.id,
+        })
+        .returning("*");
+
+      return {
+        success: true,
+        message: "Paket telah berhasil dikonfirmasi.",
+      };
+    });
+  }
+
 };
 
 module.exports = PackageServices;
