@@ -409,12 +409,12 @@ class PackageServices {
       const data = await db("confirmed_packages AS cp")
         .join("packages AS p", "cp.package_id", "p.id")
         .select(
-          "cp.id",
-          "cp.package_id",
-          "cp.is_moved",
-          "p.nama",
-          "p.resi",
-          "p.kode"
+          "cp.id AS id",            
+          "cp.package_id AS package_id",
+          "cp.is_moved AS is_moved",
+          "p.nama AS nama",
+          "p.resi AS resi",
+          "p.kode AS kode"
         )
         .where("cp.is_moved", false)
         .orderBy("cp.id", "asc");
