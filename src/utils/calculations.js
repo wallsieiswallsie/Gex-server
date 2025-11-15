@@ -28,24 +28,21 @@ const calculatePackageDetails = (pkg) => {
   // Hitung harga
   let price = 0;
   if (via === "Kapal") {
-    if (weightUsed < 1) {
-      // Bulatkan ke atas ke kelipatan 0.1
-      const roundedWeight = Math.ceil(weightUsed * 10) / 10;
-      price = roundedWeight * 12000;
-    } else {
-      price = weightUsed * 12000;
-    }
+    const roundedWeight = Math.ceil(weightUsed * 10) / 10;
+    price = Math.round(roundedWeight * 12000);
   }
 
   if (via === "Pesawat") {
     if (weightUsed < 0.8) {
       const roundedWeight = Math.ceil(weightUsed / 0.05) * 0.5;
       price = roundedWeight * 10000;
+    } else if (weightUsed >= 0.81 && weightUsed <= 1) {
+      // tambahan logika
+      price = 80000;
     } else {
-      price = weightUsed * 80000;
+      price = Math.ceil(weightUsed/0.1) * 80000;
     }
   }
-
 
   return {
     actualWeight,
