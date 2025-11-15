@@ -404,6 +404,31 @@ class PackageServices {
     });
   }
 
-  };
+  async getUnmovedConfirmedPackagesService() {
+    try {
+      const data = await db("confirmed_packages AS cp")
+        .join("packages AS p", "cp.package_id", "p.id")
+        .select(
+          "cp.id",
+          "cp.package_id",
+          "cp.is_moved",
+          "p.nama",
+          "p.resi",
+          "p.kode"
+        )
+        .where("cp.is_moved", false)
+        .orderBy("cp.id", "asc");
+
+      return {
+        success: true,
+        count: data.length,
+        data,
+      };
+    } catch (err) {
+      throw new InvariantError("Gagal mengambil data paket yang belum dipindahkan.");
+    }
+  }
+
+};
 
 module.exports = PackageServices;

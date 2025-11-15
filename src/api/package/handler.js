@@ -134,6 +134,24 @@ const confirmPackageHandler = async (request, h) => {
   }
 };
 
+const getUnmovedConfirmedPackagesHandler = async (request, h) => {
+  try {
+    const data = await service.getUnmovedConfirmedPackagesService();
+
+    return h.response({
+      status: "success",
+      data,
+    });
+  } catch (err) {
+    console.error("Error getUnmovedConfirmedPackagesHandler:", err);
+
+    if (err instanceof InvariantError || err instanceof NotFoundError) {
+      throw err;
+    }
+
+    throw new ServerError("Gagal mengambil daftar confirmed_packages yang belum dipindahkan");
+  }
+};
 
 module.exports = {
   createPackageHandler,
@@ -143,4 +161,5 @@ module.exports = {
   getAllArchivePackagesHandler,
   removeActivePackageByIdHandler,
   confirmPackageHandler,
+  getUnmovedConfirmedPackagesHandler,
 };
