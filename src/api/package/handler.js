@@ -181,6 +181,48 @@ const markPackageMovedHandler = async (request, h) => {
   }
 };
 
+const updatePackageBasicHandler = async (request, h) => {
+  try {
+    const { id } = request.params;
+
+    const allowedFields = [
+      "nama",
+      "panjang",
+      "lebar",
+      "tinggi",
+      "berat",
+      "kode",
+      "resi",
+      "ekspedisi",
+    ];
+
+    // Hanya ambil field yang diperbolehkan
+    const data = {};
+    allowedFields.forEach((field) => {
+      if (request.payload[field] !== undefined) {
+        data[field] = request.payload[field];
+      }
+    });
+
+    const result = await service.updatePackageBasic({ id: Number(id), data });
+
+    return h
+      .response({
+        status: "success",
+        message: "Paket berhasil diperbarui",
+        data: result,
+      })
+      .code(200);
+  } catch (err) {
+    console.error("Error updatePackageBasicHandler:", err);
+
+    if (err instanceof InvariantError || err instanceof NotFoundError) {
+      throw err;
+    }
+
+    throw new ServerError("Gagal memperbarui paket");
+  }
+};
 
 module.exports = {
   createPackageHandler,
@@ -192,4 +234,5 @@ module.exports = {
   confirmPackageHandler,
   getUnmovedConfirmedPackagesHandler,
   markPackageMovedHandler,
+  updatePackageBasicHandler,
 };

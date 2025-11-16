@@ -8,6 +8,7 @@ const {
   confirmPackageHandler,
   getUnmovedConfirmedPackagesHandler,
   markPackageMovedHandler,
+  updatePackageBasicHandler,
 } = require("./handler");
 
 const packageRoutes = [
@@ -63,6 +64,11 @@ const packageRoutes = [
     method: "POST",
     path: "/packages/confirm-moved",
     handler: markPackageMovedHandler,
+  },
+  {
+    method: "PATCH",
+    path: "/packages/{id}/edit",
+    handler: updatePackageBasicHandler,
   },
 
 ];

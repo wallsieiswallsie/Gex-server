@@ -469,6 +469,54 @@ class PackageServices {
     });
   }
 
+async updatePackageBasic({ id, data }) {
+  const trx = await db.transaction();
+
+  try {
+    // Ambil paket lama
+    const oldPkg = await trx("packages").where({ id }).first();
+    if (!oldPkg) {
+      throw new NotFoundError("Paket tidak ditemukan");
+    }
+
+    // Hitung ulang detail (tanpa mengubah via)
+    const calculated = calculatePackageDetails({
+      ...oldPkg,
+      ...data,           // panjang, lebar, tinggi, berat boleh diubah
+      via: oldPkg.via,   // wajib! user tidak boleh ubah via
+    });
+
+    const { weightUsed, price } = calculated;
+
+    // Update database
+    const [updated] = await trx("packages")
+      .where({ id })
+      .update({
+        nama: data.nama ?? oldPkg.nama,
+        panjang: Number(data.panjang) ?? oldPkg.panjang,
+        lebar: Number(data.lebar) ?? oldPkg.lebar,
+        tinggi: Number(data.tinggi) ?? oldPkg.tinggi,
+        berat: Number(data.berat) ?? oldPkg.berat,
+
+        // read only oleh user — tapi dihitung ulang otomatis
+        berat_dipakai: weightUsed,
+        harga: price,
+
+        updated_at: new Date(),
+      })
+      .returning("*");
+
+    await trx.commit();
+    return updated;
+
+  } catch (err) {
+    await trx.rollback();
+    console.error("Error updatePackageBasic:", err);
+    throw err;
+  }
+}
+
+
 };
 
 module.exports = PackageServices;
