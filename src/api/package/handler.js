@@ -181,45 +181,25 @@ const markPackageMovedHandler = async (request, h) => {
   }
 };
 
-const updatePackageBasicHandler = async (request, h) => {
+const updatePackageHandler = async (request, h) => {
   try {
-    const { id } = request.params;
+    const result = await service.updatePackageService(request.payload);
 
-    const allowedFields = [
-      "nama",
-      "panjang",
-      "lebar",
-      "tinggi",
-      "berat",
-      "kode",
-      "resi",
-      "ekspedisi",
-    ];
+    return h.response({
+      status: "success",
+      message: "Paket berhasil diperbarui",
+      data: result,
+    }).code(200);
 
-    // Hanya ambil field yang diperbolehkan
-    const data = {};
-    allowedFields.forEach((field) => {
-      if (request.payload[field] !== undefined) {
-        data[field] = request.payload[field];
-      }
-    });
-
-    const result = await service.updatePackageBasic({ id: Number(id), data });
-
-    return h
-      .response({
-        status: "success",
-        message: "Paket berhasil diperbarui",
-        data: result,
-      })
-      .code(200);
   } catch (err) {
-    console.error("Error updatePackageBasicHandler:", err);
+    console.error("Error updatePackageHandler:", err);
 
-    if (err instanceof InvariantError || err instanceof NotFoundError) {
+    // Error dari Client (NotFound, InvariantError)
+    if (err instanceof NotFoundError || err instanceof InvariantError) {
       throw err;
     }
 
+    // Error tak terduga → server error
     throw new ServerError("Gagal memperbarui paket");
   }
 };
@@ -234,5 +214,5 @@ module.exports = {
   confirmPackageHandler,
   getUnmovedConfirmedPackagesHandler,
   markPackageMovedHandler,
-  updatePackageBasicHandler,
+  updatePackageHandler,
 };

@@ -469,53 +469,163 @@ class PackageServices {
     });
   }
 
-async updatePackageBasic({ id, data }) {
-  const trx = await db.transaction();
+  async updatePackageService(input) {
+    const trx = await db.transaction();
 
-  try {
-    // Ambil paket lama
-    const oldPkg = await trx("packages").where({ id }).first();
-    if (!oldPkg) {
-      throw new NotFoundError("Paket tidak ditemukan");
+    try {
+      const {
+        panjang,
+        lebar,
+        tinggi,
+        berat,
+        kode,
+        nama,
+        resi,
+        ekspedisi,
+      } = input;
+
+      // ────────────────────────────────────────────
+      // 1. Ambil package berdasarkan RESI
+      // ────────────────────────────────────────────
+      const paket = await trx("packages")
+        .where({ resi })
+        .first();
+
+      if (!paket) {
+        throw new NotFoundError("Package tidak ditemukan");
+      }
+
+      const packageId = paket.id;
+      const hargaLama = Number(paket.harga || 0);
+      const beratDipakaiLama = Number(paket.berat_dipakai || 0);
+
+      let invoiceInfo = null;
+      let batchInfo = null;
+
+      // ────────────────────────────────────────────
+      // 2. Jika invoiced = true → ambil invoice terkait
+      // ────────────────────────────────────────────
+      if (paket.invoiced) {
+        invoiceInfo = await trx("invoice_packages as ip")
+          .join("invoices as i", "ip.invoice_id", "i.id")
+          .select("i.id as invoice_id", "i.total_price")
+          .where("ip.package_id", packageId)
+          .first();
+
+        if (invoiceInfo) {
+          // kurangi harga lama sebagai penyesuaian awal
+          invoiceInfo.total_price = Number(invoiceInfo.total_price) - hargaLama;
+        }
+      }
+
+      // ────────────────────────────────────────────
+      // 3. Cek apakah package terdaftar di batch
+      // ────────────────────────────────────────────
+      const batchRelation = await trx("batch_packages")
+        .where({ package_id: packageId })
+        .first();
+
+      if (batchRelation) {
+        const batchTable =
+          batchRelation.via === "Kapal"
+            ? "batches_kapal"
+            : "batches_pesawat";
+
+        const existingBatch = await trx(batchTable)
+          .where({ id: batchRelation.id_batch })
+          .first();
+
+        batchInfo = {
+          table: batchTable,
+          id: existingBatch.id,
+          total_value: Number(existingBatch.total_value) - hargaLama,
+          total_berat: Number(existingBatch.total_berat) - beratDipakaiLama,
+        };
+      }
+
+      // ────────────────────────────────────────────
+      // 4. Hitung nilai baru berdasarkan input client
+      // ────────────────────────────────────────────
+      const details = calculatePackageDetails({
+        panjang,
+        lebar,
+        tinggi,
+        berat,
+        kode,
+      });
+
+      const hargaBaru = details.price;
+      const beratDipakaiBaru = details.weightUsed;
+
+      // ────────────────────────────────────────────
+      // 5. Update tabel packages
+      // ────────────────────────────────────────────
+      await trx("packages")
+        .where({ id: packageId })
+        .update({
+          panjang: Number(panjang) || 0,
+          lebar: Number(lebar) || 0,
+          tinggi: Number(tinggi) || 0,
+          berat: Number(berat) || 0,
+
+          harga: hargaBaru,
+          berat_dipakai: beratDipakaiBaru,
+
+          kode,
+          via: details.via,
+          nama,
+          ekspedisi,
+
+          updated_at: new Date(),
+        });
+
+      // ────────────────────────────────────────────
+      // 6. Update invoice jika ada
+      // ────────────────────────────────────────────
+      if (invoiceInfo) {
+        const finalPrice = invoiceInfo.total_price + hargaBaru;
+
+        await trx("invoices")
+          .where({ id: invoiceInfo.invoice_id })
+          .update({
+            total_price: finalPrice,
+          });
+      }
+
+      // ────────────────────────────────────────────
+      // 7. Update batch jika ada
+      // ────────────────────────────────────────────
+      if (batchInfo) {
+        const finalValue = batchInfo.total_value + hargaBaru;
+        const finalWeight = batchInfo.total_berat + beratDipakaiBaru;
+
+        await trx(batchInfo.table)
+          .where({ id: batchInfo.id })
+          .update({
+            total_value: finalValue,
+            total_berat: finalWeight,
+            updated_at: new Date(),
+          });
+      }
+
+      await trx.commit();
+
+      return {
+        success: true,
+        message: "Package berhasil diperbarui",
+        data: {
+          hargaBaru,
+          beratDipakaiBaru,
+          via: details.via,
+        },
+      };
+
+    } catch (err) {
+      await trx.rollback();
+      console.error("Error in updatePackageService:", err);
+      throw err;
     }
-
-    // Hitung ulang detail (tanpa mengubah via)
-    const calculated = calculatePackageDetails({
-      ...oldPkg,
-      ...data,           // panjang, lebar, tinggi, berat boleh diubah
-      via: oldPkg.via,   // wajib! user tidak boleh ubah via
-    });
-
-    const { weightUsed, price } = calculated;
-
-    // Update database
-    const [updated] = await trx("packages")
-      .where({ id })
-      .update({
-        nama: data.nama ?? oldPkg.nama,
-        panjang: Number(data.panjang) ?? oldPkg.panjang,
-        lebar: Number(data.lebar) ?? oldPkg.lebar,
-        tinggi: Number(data.tinggi) ?? oldPkg.tinggi,
-        berat: Number(data.berat) ?? oldPkg.berat,
-
-        // read only oleh user — tapi dihitung ulang otomatis
-        berat_dipakai: weightUsed,
-        harga: price,
-
-        updated_at: new Date(),
-      })
-      .returning("*");
-
-    await trx.commit();
-    return updated;
-
-  } catch (err) {
-    await trx.rollback();
-    console.error("Error updatePackageBasic:", err);
-    throw err;
   }
-}
-
 
 };
 
