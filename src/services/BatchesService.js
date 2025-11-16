@@ -486,79 +486,78 @@ async function movePackageToKarung(batchId, resi, noKarungBaru) {
   };
 }
 
-async function failPackageByResi(resi) {
-  // Mulai transaksi
-  return await knex.transaction(async (trx) => {
-    // 1. Ambil package berdasarkan resi
-    const pkg = await trx("packages").where({ resi }).first();
-    if (!pkg) throw new Error(`Package dengan resi ${resi} tidak ditemukan`);
+// Service untuk menandai paket gagal X-ray
+async function failPackageByResi(trx, resi) {
+  // 1. Ambil package berdasarkan resi
+  const pkg = await trx("packages").where({ resi }).first();
+  if (!pkg) throw new Error(`Package dengan resi ${resi} tidak ditemukan`);
 
-    // 2. Ambil batch terkait dari batch_packages
-    const batchPkg = await trx("batch_packages").where({ package_id: pkg.id }).first();
-    if (!batchPkg) throw new Error(`Package dengan id ${pkg.id} tidak terkait batch`);
+  // 2. Ambil batch terkait dari batch_packages
+  const batchPkg = await trx("batch_packages").where({ package_id: pkg.id }).first();
+  if (!batchPkg) throw new Error(`Package dengan id ${pkg.id} tidak terkait batch`);
 
-    const batchId = batchPkg.id_batch;
+  const batchId = batchPkg.id_batch;
 
-    // 3. Ambil batch pesawat terkait
-    const batch = await trx("batches_pesawat").where({ id: batchId }).first();
-    if (!batch) throw new Error(`Batch pesawat dengan id ${batchId} tidak ditemukan`);
+  // 3. Ambil batch pesawat terkait
+  const batch = await trx("batches_pesawat").where({ id: batchId }).first();
+  if (!batch) throw new Error(`Batch pesawat dengan id ${batchId} tidak ditemukan`);
 
-    // 4. Kurangi total berat & total value sebelum update package
-    const totalBeratBaru = (Number(batch.total_berat) || 0) - (Number(pkg.berat_dipakai) || 0);
-    const totalValueBaru = (Number(batch.total_value) || 0) - (Number(pkg.harga) || 0);
+  // 4. Kurangi total berat & total value sebelum update package
+  const totalBeratBaru = (Number(batch.total_berat) || 0) - (Number(pkg.berat_dipakai) || 0);
+  const totalValueBaru = (Number(batch.total_value) || 0) - (Number(pkg.harga) || 0);
 
-    await trx("batches_pesawat")
-      .where({ id: batchId })
-      .update({
-        total_berat: totalBeratBaru,
-        total_value: totalValueBaru,
-      });
+  await trx("batches_pesawat")
+    .where({ id: batchId })
+    .update({
+      total_berat: totalBeratBaru,
+      total_value: totalValueBaru,
+    });
 
-    // 5. Update kode sesuai rule
-    let newKode = pkg.kode;
-    if (pkg.kode === "JPSOQA") newKode = "JKSOQA";
-    if (pkg.kode === "JPSOQB") newKode = "JKSOQB";
+  // 5. Update kode sesuai rule
+  let newKode = pkg.kode;
+  if (pkg.kode === "JPSOQA") newKode = "JKSOQA";
+  if (pkg.kode === "JPSOQB") newKode = "JKSOQB";
 
-    // 6. Update kolom via ke "Kapal"
-    const updatedPkg = {
-      ...pkg,
+  // 6. Update kolom via ke "Kapal"
+  const updatedPkg = {
+    ...pkg,
+    kode: newKode,
+    via: "Kapal",
+  };
+
+  // 7. Hitung berat_dipakai & harga baru
+  const { weightUsed, price } = calculatePackageDetails(updatedPkg);
+
+  await trx("packages")
+    .where({ id: pkg.id })
+    .update({
       kode: newKode,
       via: "Kapal",
-    };
+      berat_dipakai: weightUsed,
+      harga: price,
+      is_failed_xray: true,
+    });
 
-    // 7. Hitung berat_dipakai & harga baru
-    const { weightUsed, price } = calculatePackageDetails(updatedPkg);
+  // 8. Hapus record di batch_packages
+  await trx("batch_packages")
+    .where({ package_id: pkg.id, id_batch: batchId })
+    .del();
 
-    await trx("packages")
-      .where({ id: pkg.id })
-      .update({
-        kode: newKode,
-        via: "Kapal",
-        berat_dipakai: weightUsed,
-        harga: price,
-        is_failed_xray: true,
-      });
+  // 9. Insert ke tabel failed_xray
+  await trx("failed_xray").insert({ package_id: pkg.id });
 
-    // 8. Hapus record di batch_packages
-    await trx("batch_packages")
-      .where({ package_id: pkg.id, id_batch: batchId })
-      .del();
-
-    // 9. Insert ke tabel failed_xray
-    await trx("failed_xray").insert({ package_id: pkg.id });
-
-    return { success: true, packageId: pkg.id, batchId };
-  });
+  return { success: true, packageId: pkg.id, batchId };
 }
 
-async function getAllFailedXray() {
-  const records = await knex("failed_xray")
+// Service untuk ambil semua paket gagal X-ray
+async function getAllFailedXray(trx) {
+  const records = await trx("failed_xray")
     .join("packages", "failed_xray.package_id", "packages.id")
     .select(
       "failed_xray.package_id",
       "packages.resi",
       "packages.nama",
-      "package.kode"
+      "packages.kode"
     )
     .orderBy("failed_xray.id", "desc");
 
