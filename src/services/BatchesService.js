@@ -528,6 +528,10 @@ async function failPackageByResi(resi) {
       is_failed_xray: true,
     });
 
+    await trx("package_status")
+      .where({ package_id: pkg.id })
+      .update({ status: 1 });
+
     // Hapus dari batch_packages
     await trx("batch_packages").where({ package_id: pkg.id, id_batch: batchId }).del();
 

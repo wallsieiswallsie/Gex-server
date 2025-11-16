@@ -204,7 +204,7 @@ class PackageServices {
   }
 
   async addActivePackages({ packageId }, trx = null) {
-    const t = trx || db; // pakai transaction jika ada
+    const t = trx || db;
 
     const packages = await t("packages").where({ id: packageId }).first();
     if (!packages) throw new NotFoundError("Paket tidak ditemukan!");
