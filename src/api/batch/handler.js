@@ -12,6 +12,7 @@ const {
   getBatchWithKarung,
   getPackagesByKarung,
   movePackageToKarung,
+  failPackageByResi,
 } = require("../../services/BatchesService");
 
 const NotFoundError = require("../../exceptions/NotFoundError");
@@ -308,6 +309,32 @@ const movePackageToKarungHandler = async (request, h) => {
   }
 };
 
+async function failPackageHandler(request, h) {
+  try {
+    const { resi } = request.payload;
+
+    if (!resi) {
+      throw new Error("Resi harus disertakan");
+    }
+
+    const result = await failPackageByResi(resi);
+
+    return h.response({
+      success: true,
+      message: `Package dengan resi ${resi} berhasil diproses sebagai failed X-ray`,
+      data: result,
+    }).code(200);
+
+  } catch (err) {
+    console.error("Error failPackageHandler:", err);
+
+    return h.response({
+      success: false,
+      message: err.message,
+    }).code(400);
+  }
+};
+
 module.exports = { 
   createBatchKapalHandler,
   createBatchPesawatHandler,
@@ -321,4 +348,5 @@ module.exports = {
   getBatchWithKarungHandler,
   getPackagesByKarungHandler,
   movePackageToKarungHandler,
+  failPackageHandler,
 };
