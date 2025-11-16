@@ -551,6 +551,20 @@ async function failPackageByResi(resi) {
   });
 }
 
+async function getAllFailedXray() {
+  const records = await knex("failed_xray")
+    .join("packages", "failed_xray.package_id", "packages.id")
+    .select(
+      "failed_xray.package_id",
+      "packages.resi",
+      "packages.nama",
+      "package.kode"
+    )
+    .orderBy("failed_xray.id", "desc");
+
+  return records;
+}
+
 // ─────────────────────────────
 // 🔹 Export
 // ─────────────────────────────
@@ -569,4 +583,5 @@ module.exports = {
   getPackagesByKarung,
   movePackageToKarung,
   failPackageByResi,
+  getAllFailedXray,
 };

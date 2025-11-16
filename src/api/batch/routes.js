@@ -12,6 +12,7 @@ const {
   getPackagesByKarungHandler,
   movePackageToKarungHandler,
   failPackageHandler,
+  getFailedXrayHandler,
 } = require("./handler");
 
 const batchRoutes = [
@@ -80,7 +81,11 @@ const batchRoutes = [
     path: "/packages/failed_xray",
     handler: failPackageHandler,
   },
-
+  {
+    method: "GET",
+    path: "/packages/failed_xray",
+    handler: getFailedXrayHandler,
+  },
 
 ];
 

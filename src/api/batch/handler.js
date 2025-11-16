@@ -13,6 +13,7 @@ const {
   getPackagesByKarung,
   movePackageToKarung,
   failPackageByResi,
+  getAllFailedXray,
 } = require("../../services/BatchesService");
 
 const NotFoundError = require("../../exceptions/NotFoundError");
@@ -335,6 +336,26 @@ async function failPackageHandler(request, h) {
   }
 };
 
+async function getFailedXrayHandler(request, h) {
+  try {
+    const records = await getAllFailedXray();
+
+    return h.response({
+      success: true,
+      data: records,
+    }).code(200);
+
+  } catch (err) {
+    console.error("Error getFailedXrayHandler:", err);
+
+    return h.response({
+      success: false,
+      message: "Gagal mengambil data failed X-ray",
+      detail: err.message,
+    }).code(500);
+  }
+};
+
 module.exports = { 
   createBatchKapalHandler,
   createBatchPesawatHandler,
@@ -349,4 +370,5 @@ module.exports = {
   getPackagesByKarungHandler,
   movePackageToKarungHandler,
   failPackageHandler,
+  getFailedXrayHandler
 };
