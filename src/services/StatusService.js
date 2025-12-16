@@ -2,7 +2,7 @@ const db = require("../db");
 
 class StatusService {
   async addStatus(packageId, status, batchId = null, trx = null) {
-    const t = trx || db; // gunakan alias aman
+    const t = trx || db;
     if (!status || typeof status !== "number") {
       throw new Error("Status harus berupa angka");
     }
@@ -25,7 +25,6 @@ class StatusService {
     const now = new Date();
 
     switch (status) {
-      // ==================== CASE 1 ====================
       case 1: {
         if (!packageId) throw new Error("packageId harus diberikan untuk status 1");
         await t("package_status")
@@ -35,7 +34,6 @@ class StatusService {
         break;
       }
 
-      // ==================== CASE 2 ====================
       case 2: {
         if (!packageId) throw new Error("packageId harus diberikan untuk status 2");
         if (!batchId) throw new Error("batchId harus diberikan untuk status 2");
@@ -54,7 +52,6 @@ class StatusService {
         break;
       }
 
-      // ==================== CASE 3 & 4 ====================
       case 3:
       case 4: {
         if (!batchId) throw new Error(`batchId harus diberikan untuk status ${status}`);
@@ -80,7 +77,6 @@ class StatusService {
         break;
       }
 
-      // ==================== CASE 5 ====================
       case 5: {
         if (!packageId) throw new Error("packageId harus diberikan untuk status 5");
         await t("package_status")
@@ -90,7 +86,6 @@ class StatusService {
         break;
       }
 
-      // ==================== CASE 6 ====================
       case 6: {
         if (!packageId) throw new Error("packageId harus diberikan untuk status 6");
 
@@ -106,7 +101,6 @@ class StatusService {
         break;
       }
 
-      // ==================== CASE 7 ====================
       case 7: {
         if (!packageId) {
           throw new Error("Resi atau packageId harus diberikan untuk status 7");
@@ -148,7 +142,6 @@ class StatusService {
         break;
       }
 
-      // ==================== CASE 8 ====================
       case 8: {
         if (!packageId) throw new Error("packageId harus diberikan untuk status 8");
 
@@ -157,10 +150,8 @@ class StatusService {
           throw new Error("Paket tidak ditemukan di tabel packages");
         }
 
-        // Update kolom finished = true
         await t("packages").where({ id: packageId }).update({ finished: true });
 
-        // Simpan status 8 di tabel package_status
         await t("package_status")
           .insert({ package_id: packageId, status: 8, created_at: now })
           .onConflict("package_id")
@@ -169,7 +160,6 @@ class StatusService {
         break;
       }
 
-      // ==================== DEFAULT ====================
       default:
         throw new Error("Status tidak valid");
     }
